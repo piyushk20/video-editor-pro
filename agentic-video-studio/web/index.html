@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Video Editor Pro | Autonomous Video & Podcast Studio</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎬</text></svg>">
+</head>
+<body>
+
+  <!-- Top Studio Header -->
+  <header class="studio-header">
+    <div class="brand-wrapper">
+      <div class="brand-logo">🎬</div>
+      <div class="brand-text">
+        <h1>Video Editor Pro</h1>
+        <span>Autonomous Agentic Studio</span>
+      </div>
+    </div>
+
+    <div class="header-badges">
+      <div class="badge">
+        <span class="badge-dot"></span>
+        <span>Engine Active</span>
+      </div>
+      <div class="badge badge-primary">
+        <span>📱 9:16 Vertical Default</span>
+      </div>
+      <div class="badge badge-primary">
+        <span>🕷️ Scrapling 4K B-Roll</span>
+      </div>
+      <button id="btn-header-explorer" class="btn-icon" title="Open Output Folder in File Explorer">
+        📁 Open Output Folder
+      </button>
+      <a href="https://github.com/piyushk20/video-editor-pro" target="_blank" class="btn-icon">
+        GitHub
+      </a>
+      <a href="https://github.com/piyushk20/video-editor-pro/wiki" target="_blank" class="btn-icon">
+        📖 Wiki
+      </a>
+    </div>
+  </header>
+
+  <!-- Main Layout -->
+  <main class="studio-main">
+    
+    <!-- Left Column: Controls & Ingestion -->
+    <section class="studio-controls">
+      <div class="glass-panel">
+        <div class="panel-header">
+          <h2 class="panel-title">📥 Ingest & Configure</h2>
+          <span class="badge" id="source-badge">Local / URL</span>
+        </div>
+
+        <!-- Mode Tabs -->
+        <div class="tabs-control">
+          <button class="tab-btn active" id="tab-file-mode">Upload Video File</button>
+          <button class="tab-btn" id="tab-url-mode">Web / Podcast URL</button>
+        </div>
+
+        <!-- File Upload Section -->
+        <div id="section-file-upload">
+          <div class="dropzone" id="dropzone">
+            <input type="file" id="file-input" accept="video/mp4,video/quicktime,video/webm,audio/*" style="display: none;">
+            <div class="dropzone-icon">📤</div>
+            <div class="dropzone-text">
+              <h4 id="drop-filename">Drag & drop footage or click to browse</h4>
+              <p id="drop-subtext">MP4, MOV, MKV, MP3, WAV (up to 4K)</p>
+            </div>
+          </div>
+          <!-- File Preview Info -->
+          <div id="file-preview-card" style="display: none; margin-top: 14px; background: rgba(0,0,0,0.4); border-radius: 8px; padding: 12px; font-size: 12px; border: 1px solid var(--border-subtle);">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+              <strong id="preview-filename" style="color: var(--cyan);">video.mp4</strong>
+              <span id="preview-filesize" style="color: var(--text-muted);">0 MB</span>
+            </div>
+            <div style="color: var(--text-dim);" id="preview-specs">Ready for upload</div>
+          </div>
+        </div>
+
+        <!-- URL Input Section -->
+        <div id="section-url-input" style="display: none;">
+          <div class="input-group">
+            <label class="input-label" for="input-url">Media Stream / Video URL</label>
+            <input type="url" id="input-url" class="input-field" placeholder="https://youtube.com/watch?v=... or direct MP4/podcast audio URL">
+          </div>
+        </div>
+
+        <!-- Project Name -->
+        <div class="input-group" style="margin-top: 16px;">
+          <label class="input-label" for="project-name">Project Slug / Name</label>
+          <input type="text" id="project-name" class="input-field" placeholder="e.g. stop_chasing_money">
+        </div>
+
+        <!-- Creative Settings -->
+        <div style="margin-top: 20px;">
+          <h4 style="font-size: 13px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px;">Creative Engine Directives</h4>
+          
+          <div class="setting-row">
+            <div class="setting-info">
+              <h5>Primary Master Format</h5>
+              <p>9:16 Vertical Mobile Master (1080×1920)</p>
+            </div>
+            <span class="badge" style="color: var(--cyan); border-color: rgba(6,182,212,0.3);">Mandatory</span>
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-info">
+              <h5>Scrapling 4K B-Roll</h5>
+              <p>Autonomous zero-API copyright-free cutaways</p>
+            </div>
+            <label style="position: relative; display: inline-block; width: 40px; height: 22px;">
+              <input type="checkbox" id="toggle-scrapling" checked style="opacity: 0; width: 0; height: 0;">
+              <span style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--emerald); border-radius: 22px; transition: .4s;"></span>
+            </label>
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-info">
+              <h5>Safe-Zone Motion Graphics</h5>
+              <p>Upper third cards (Strict zero face obstruction)</p>
+            </div>
+            <span class="badge" style="color: var(--emerald); border-color: rgba(16,185,129,0.3);">Active</span>
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-info">
+              <h5>Broadcast Audio Normalization</h5>
+              <p>Calibrated speech loudness to -14 LUFS</p>
+            </div>
+            <span class="badge" style="color: var(--amber); border-color: rgba(245,158,11,0.3);">-14 LUFS</span>
+          </div>
+        </div>
+
+        <!-- Launch Button -->
+        <button id="btn-launch-pipeline" class="btn-launch">
+          <span>🚀 Initiate AI Production Pipeline</span>
+        </button>
+
+        <!-- Past Completed Projects -->
+        <div style="margin-top: 28px;">
+          <h4 style="font-size: 12px; font-weight: 700; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px;">Completed Projects in Output Folder</h4>
+          <div class="project-chips" id="past-projects-list">
+            <!-- Dynamically populated from /api/projects -->
+            <span class="chip">Loading past projects...</span>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Right Column: Live Pipeline Monitor & Deliverables Showcase -->
+    <section class="studio-workspace">
+      
+      <!-- Live Processing Tracker -->
+      <div class="glass-panel pipeline-card" id="processing-panel">
+        <div class="panel-header">
+          <h3 class="panel-title" id="pipeline-status-heading">
+            <span class="badge-dot" id="status-pulse"></span>
+            <span id="pipeline-status-text">Production Pipeline: Ready</span>
+          </h3>
+          <span class="badge" id="elapsed-time">00:00</span>
+        </div>
+
+        <div class="pipeline-stepper">
+          <div class="step-item" id="step-0">
+            <div class="step-number">PHASE 0</div>
+            <div class="step-title">Ingest & Probe</div>
+          </div>
+          <div class="step-item" id="step-1">
+            <div class="step-number">PHASE 1</div>
+            <div class="step-title">Whisper SRT</div>
+          </div>
+          <div class="step-item" id="step-2">
+            <div class="step-number">PHASE 2</div>
+            <div class="step-title">Director Plan</div>
+          </div>
+          <div class="step-item" id="step-3">
+            <div class="step-number">PHASE 3</div>
+            <div class="step-title">Scrapling B-Roll</div>
+          </div>
+          <div class="step-item" id="step-4">
+            <div class="step-number">PHASE 4</div>
+            <div class="step-title">Master Assembly</div>
+          </div>
+        </div>
+
+        <div class="progress-container">
+          <div class="progress-fill" id="progress-bar"></div>
+        </div>
+
+        <!-- Live Terminal Stream Logs -->
+        <div class="terminal-box" id="terminal-logs">
+          [System Ready] Awaiting video file or media URL to start processing...
+        </div>
+      </div>
+
+      <!-- Deliverables Showcase -->
+      <div class="glass-panel output-showcase" id="output-section">
+        <div class="panel-header">
+          <h3 class="panel-title">
+            <span>🎬 Master Deliverables & Player</span>
+          </h3>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn-icon" id="btn-open-explorer">
+              📂 Open in File Explorer
+            </button>
+          </div>
+        </div>
+
+        <!-- View Switcher Tabs -->
+        <div class="view-tabs">
+          <button class="view-tab active" id="tab-view-9x16">📱 9:16 Vertical Master</button>
+          <button class="view-tab" id="tab-view-16x9">🖥️ 16:9 Widescreen Companion</button>
+          <button class="view-tab" id="tab-view-shorts">⚡ Highlight Shorts (<span id="shorts-count">0</span>)</button>
+        </div>
+
+        <!-- View 1: 9:16 Vertical Player Simulator -->
+        <div id="view-container-9x16" class="player-container-9x16">
+          <div class="phone-mockup">
+            <video id="player-9x16" controls playsinline preload="metadata">
+              <source id="player-9x16-src" src="" type="video/mp4">
+              Your browser does not support HTML5 video.
+            </video>
+          </div>
+        </div>
+
+        <!-- View 2: 16:9 Widescreen Player -->
+        <div id="view-container-16x9" class="player-container-16x9" style="display: none;">
+          <video id="player-16x9" controls playsinline preload="metadata">
+            <source id="player-16x9-src" src="" type="video/mp4">
+          </video>
+        </div>
+
+        <!-- View 3: Highlight Shorts Gallery -->
+        <div id="view-container-shorts" style="display: none;">
+          <div class="shorts-row" id="shorts-gallery">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+
+        <!-- Deliverables Download Hub -->
+        <div style="margin-top: 10px;">
+          <h4 style="font-size: 13px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px; letter-spacing: 0.5px;">Deliverable Files Hub</h4>
+          
+          <div class="deliverables-grid" id="deliverables-grid">
+            
+            <div class="deliverable-card">
+              <div class="del-top">
+                <div class="del-icon">📱</div>
+                <div class="del-meta">
+                  <h6>9:16 Vertical Master</h6>
+                  <p id="del-size-9x16">1080×1920 MP4</p>
+                </div>
+              </div>
+              <a href="#" id="del-link-9x16" class="del-btn" download>Download 9:16 Master</a>
+            </div>
+
+            <div class="deliverable-card">
+              <div class="del-top">
+                <div class="del-icon">🖥️</div>
+                <div class="del-meta">
+                  <h6>16:9 Companion</h6>
+                  <p id="del-size-16x9">1920×1080 MP4</p>
+                </div>
+              </div>
+              <a href="#" id="del-link-16x9" class="del-btn" download>Download 16:9 Video</a>
+            </div>
+
+            <div class="deliverable-card">
+              <div class="del-top">
+                <div class="del-icon">💬</div>
+                <div class="del-meta">
+                  <h6>Word-Level Subtitles</h6>
+                  <p>Timestamped SRT</p>
+                </div>
+              </div>
+              <a href="#" id="del-link-srt" class="del-btn" download>Download SRT</a>
+            </div>
+
+            <div class="deliverable-card">
+              <div class="del-top">
+                <div class="del-icon">📋</div>
+                <div class="del-meta">
+                  <h6>Director Edit Plan</h6>
+                  <p>JSON Timeline Cues</p>
+                </div>
+              </div>
+              <a href="#" id="del-link-plan" class="del-btn" target="_blank">View edit_plan.json</a>
+            </div>
+
+            <div class="deliverable-card">
+              <div class="del-top">
+                <div class="del-icon">📊</div>
+                <div class="del-meta">
+                  <h6>Delivery Report & Score</h6>
+                  <p id="del-score-text">Quality Score: 9.7/10</p>
+                </div>
+              </div>
+              <a href="#" id="del-link-report" class="del-btn" target="_blank">View Report</a>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

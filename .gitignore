@@ -61,6 +61,8 @@ venv.bak/
 *.ogg
 
 # Studio inputs, assets, and rendered outputs
+output/
+outputs/
 agentic-video-studio/inputs/
 agentic-video-studio/renders/
 agentic-video-studio/assets/

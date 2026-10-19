@@ -114,22 +114,41 @@ Copy `.env.example` to `.env` (optional for external stock providers):
 cp agentic-video-studio/.env.example agentic-video-studio/.env
 ```
 
-### Running the Pipeline
+### 🌐 Web Studio UI (Recommended)
 
-To run an end-to-end automated edit on any input video or podcast:
+Launch the interactive local Web Studio on port 8090:
+
+```bash
+python agentic-video-studio/studio_server.py
+```
+
+Open your browser to: **`http://localhost:8090`**
+- **Drag & Drop Upload**: Upload any video file or paste a web/podcast stream URL.
+- **Live 5-Phase Tracker**: Monitor real-time progress across Ingestion, Whisper Transcription, Director Plan, Scrapling B-Roll, and Master Assembly.
+- **Interactive Mobile 9:16 Player**: Preview rendered 9:16 vertical masters with ambient blurred background and subtitles directly in the browser.
+- **Highlight Shorts Carousel**: Browse and preview standalone highlight clips.
+- **Deliverables & Explorer Hub**: One-click download of all files or open the `output/<project_name>/` folder directly in Windows File Explorer.
+
+---
+
+### Running via CLI
+
+To run via command-line:
 
 ```bash
 python agentic-video-studio/run_pipeline.py --input "path/to/source_video.mp4" --project-name "my_episode"
 ```
 
-The resulting deliverables will be organized in:
-`agentic-video-studio/renders/my_episode/`
-- `full_episode_9x16_vertical.mp4`
-- `full_episode_16x9_horizontal.mp4`
-- `shorts/`
-- `transcript.srt`
-- `edit_plan.json`
-- `DELIVERY_REPORT.md`
+All deliverables are automatically organized in both:
+- `output/<project_name>/`
+- `agentic-video-studio/renders/<project_name>/`
+  - `full_episode_9x16_vertical.mp4` (Primary 9:16 vertical master)
+  - `full_episode_16x9_horizontal.mp4` (16:9 widescreen companion)
+  - `shorts/` (Highlight reels)
+  - `transcript.srt` (Word-level timestamped captions)
+  - `edit_plan.json` (Director plan)
+  - `review_score.json` (Quality audit)
+  - `DELIVERY_REPORT.md` (Project summary & timestamps)
 
 ---
 
