@@ -68,7 +68,7 @@ def sync_project_to_output(project_name: str):
                 shutil.copy2(item, target)
 
 
-def run_pipeline_thread(job_id: str, input_path: str, project_name: str):
+def run_pipeline_thread(job_id: str, input_path: str, project_name: str, trim_silence: bool = True):
     job = JOBS[job_id]
     job["status"] = "running"
     
@@ -78,15 +78,36 @@ def run_pipeline_thread(job_id: str, input_path: str, project_name: str):
         job["current_activity"] = msg
 
     try:
-        # Phase 0: Input Handling
+        # Phase 0: Input Handling & Optional Silence Trimming
         job["phase"] = 0
         job["progress"] = 10
-        log(f"Phase 0: Ingesting and probing '{Path(input_path).name}'...")
-        cmd_p0 = [sys.executable, str(STUDIO_ROOT / "tools" / "phase0_input_handler.py"), input_path, "--project", project_name]
+        log(f"Phase 0: Ingesting '{Path(input_path).name}' (Trim Silences: {trim_silence})...")
+        cmd_p0 = [
+            sys.executable, str(STUDIO_ROOT / "tools" / "phase0_input_handler.py"),
+            input_path,
+            "--project", project_name
+        ]
+        if trim_silence:
+            cmd_p0.append("--trim-silence")
+        else:
+            cmd_p0.append("--no-trim-silence")
+
         p0 = subprocess.run(cmd_p0, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, cwd=str(STUDIO_ROOT))
         if p0.returncode != 0:
             raise RuntimeError(f"Phase 0 failed: {p0.stderr[:300]}")
-        log("Phase 0 Complete: Media stream verified & manifest saved.")
+        
+        # Check manifest for silence trimmer statistics
+        manifest_file = INPUTS_DIR / project_name / "manifest.json"
+        if manifest_file.exists():
+            try:
+                with open(manifest_file) as f:
+                    mf = json.load(f)
+                    stats = mf.get("silence_stats")
+                    if stats:
+                        log(f"Phase 0: Trimmed {stats.get('silence_count', 0)} pauses (Saved {stats.get('silence_removed_sec', 0)}s of dead air). New duration: {stats.get('new_duration', 0):.1f}s.")
+            except Exception:
+                pass
+        log("Phase 0 Complete: Media verified and manifests saved.")
 
         # Phase 1: Content Analysis & Transcription
         job["phase"] = 1
@@ -150,6 +171,7 @@ def run_pipeline_thread(job_id: str, input_path: str, project_name: str):
 class UrlProcessRequest(BaseModel):
     url: str
     project_name: str
+    trim_silence: bool = True
 
 
 @app.get("/api/projects")
@@ -230,7 +252,8 @@ def get_project_details(project_name: str):
 @app.post("/api/upload")
 async def upload_and_process(
     file: UploadFile = File(...),
-    project_name: str = Form(...)
+    project_name: str = Form(...),
+    trim_silence: str = Form("true")
 ):
     """Handle drag & drop file upload and start pipeline."""
     slug = "".join(c if c.isalnum() or c in "_-" else "_" for c in project_name).strip("_")
@@ -254,7 +277,8 @@ async def upload_and_process(
         "error": None
     }
 
-    t = threading.Thread(target=run_pipeline_thread, args=(job_id, str(dest_file), slug), daemon=True)
+    should_trim = trim_silence.lower() in ("true", "1", "yes")
+    t = threading.Thread(target=run_pipeline_thread, args=(job_id, str(dest_file), slug, should_trim), daemon=True)
     t.start()
 
     return {"job_id": job_id, "project_name": slug}
@@ -276,7 +300,7 @@ def process_url(req: UrlProcessRequest):
         "error": None
     }
 
-    t = threading.Thread(target=run_pipeline_thread, args=(job_id, req.url, slug), daemon=True)
+    t = threading.Thread(target=run_pipeline_thread, args=(job_id, req.url, slug, req.trim_silence), daemon=True)
     t.start()
 
     return {"job_id": job_id, "project_name": slug}

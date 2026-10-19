@@ -73,6 +73,8 @@ def main():
     parser = argparse.ArgumentParser(description="Agentic Video Studio — Phase 0: Input Handler")
     parser.add_argument("input", help="Local file path, YouTube URL, or web URL")
     parser.add_argument("--project", "-p", default="", help="Project name (auto-generated if omitted)")
+    parser.add_argument("--trim-silence", action="store_true", default=True, help="Auto-detect and trim dead air & pauses > 0.35s")
+    parser.add_argument("--no-trim-silence", dest="trim_silence", action="store_false", help="Disable auto silence trimming")
     args = parser.parse_args()
 
     input_str = args.input
@@ -81,9 +83,10 @@ def main():
 
     print(f"\n{'='*60}")
     print(f"  Agentic Video Studio — Phase 0: Input Handler")
-    print(f"  Input  : {input_str}")
-    print(f"  Type   : {input_type}")
-    print(f"  Project: {project_name}")
+    print(f"  Input        : {input_str}")
+    print(f"  Type         : {input_type}")
+    print(f"  Project      : {project_name}")
+    print(f"  Trim Silence : {args.trim_silence}")
     print(f"{'='*60}\n")
 
     if input_type == "url":
@@ -93,6 +96,34 @@ def main():
     else:
         print(f"[ERROR] Unrecognised input type for: {input_str}")
         sys.exit(1)
+
+    # Optional: Silence & Pause Trimmer
+    if args.trim_silence and input_type in ("video", "audio"):
+        try:
+            try:
+                from tools.silence_remover import remove_silences
+            except ImportError:
+                from silence_remover import remove_silences
+
+            raw_path = Path(result["path"])
+            tightened_path = raw_path.parent / f"tightened_{raw_path.name}"
+            print(f"\n[Silence Trimmer] Scanning '{raw_path.name}' for pauses and dead air...")
+            silence_res = remove_silences(
+                str(raw_path),
+                str(tightened_path),
+                noise_db=-32,
+                min_silence_sec=0.35,
+                pad_sec=0.08
+            )
+            if silence_res.get("silence_removed_sec", 0) > 0.2:
+                result["original_raw_path"] = str(raw_path)
+                result["path"] = str(tightened_path)
+                result["silence_stats"] = silence_res
+                print(f"[Silence Trimmer] Trimmed {silence_res['silence_count']} pauses ({silence_res['silence_removed_sec']}s saved). Tightened working video active.")
+            else:
+                print(f"[Silence Trimmer] Audio is already tight. Using original media.")
+        except Exception as e:
+            print(f"[Silence Trimmer Warning] Could not trim silences: {e}. Continuing with original.")
 
     # Save manifest
     manifest_path = INPUTS_DIR / project_name / "manifest.json"

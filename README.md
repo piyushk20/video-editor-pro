@@ -7,6 +7,8 @@ An intelligent, autonomous agentic video & podcast production studio built to tr
 ## 🌟 Key Features
 
 - **9:16 Vertical Master First**: Engineered for modern mobile-first consumption (TikTok, Reels, YouTube Shorts, vertical feeds) with ambient blurred backgrounds and sharp center framing.
+- **⚡ Smart Silence & Pause Trimmer**: Autonomously detects dead air and awkward pauses using FFmpeg `silencedetect`, preserving natural breath cushions (80ms) and applying 20ms audio micro-crossfades to eliminate clicks and pops while boosting retention.
+- **🖥️ Full Agentic Web Studio UI**: Modern dark-glass interface (`http://localhost:8090`) with drag-and-drop upload, YouTube/URL ingestion, live phase telemetry, and instant output player.
 - **Intelligent Motion Graphics**: Generates bold, high-contrast title cards, speaker lower thirds, callout banners, and CTAs anchored strictly in the safe zones (never obstructing the speaker's face).
 - **Cinematic B-Roll Integration**: Smooth Ken Burns pan/zoom camera moves and alpha crossfades synchronized to speech content.
 - **Kinetic Subtitles**: Word-level synchronized subtitle generation with high-contrast outlines and drop shadows.
@@ -23,7 +25,7 @@ The autonomous production workflow is organized into modular phases:
 [Input: Video / Podcast / URL / Image]
                │
                ▼
-   Phase 0: Input Handler & Normalizer
+   Phase 0: Input Handler & Silence Trimmer (FFmpeg silencedetect)
                │
                ▼
    Phase 1: Whisper Transcription & Semantic Analysis
@@ -43,8 +45,9 @@ The autonomous production workflow is organized into modular phases:
 
 ### Phase Details
 
-1. **Phase 0 — Input Handler (`phase0_input_handler.py`)**:
+1. **Phase 0 — Input Handler & Silence Trimmer (`phase0_input_handler.py`, `silence_remover.py`)**:
    - Ingests local media, podcast audio, YouTube URLs, or infographic images.
+   - Detects and trims awkward silences and pauses with natural speech cushioning.
    - Probes resolution, duration, framerate, and standardizes workspace paths.
 
 2. **Phase 1 — Transcription & Semantic Analyzer (`phase1_analyser.py`)**:
@@ -75,15 +78,22 @@ video-editorpro/
 ├── .gitignore
 ├── GEMINI.md                    # Studio rules & aspect ratio specifications
 ├── README.md                    # Project documentation
+├── output/                      # Dedicated output folders for each project (git-ignored)
 └── agentic-video-studio/
     ├── .env.example             # Template for API keys (Pexels, Pixabay, etc.)
     ├── project.md               # Pipeline specification & workflow notes
     ├── run_pipeline.py          # Unified CLI pipeline runner
+    ├── studio_server.py         # Web Studio FastAPI backend server
+    ├── web/                     # Web Studio modern glassmorphism UI
+    │   ├── index.html
+    │   ├── style.css
+    │   └── app.js
     ├── skills/                  # Autonomous agent skill definitions
     │   ├── podcast_to_video.md
     │   └── url_to_video.md
     └── tools/                   # Core production scripts & engines
         ├── phase0_input_handler.py
+        ├── silence_remover.py
         ├── phase1_analyser.py
         ├── phase2_director.py
         ├── phase3_broll_sourcer.py

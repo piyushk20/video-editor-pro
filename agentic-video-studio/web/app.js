@@ -180,10 +180,12 @@ function initLaunchButton() {
           btnLaunch.innerHTML = "<span>🚀 Initiate AI Production Pipeline</span>";
           return;
         }
+        const trimSilence = document.getElementById("toggle-trim-silence") ? document.getElementById("toggle-trim-silence").checked : true;
         logTerminal(`[Upload] Uploading source footage (${(selectedFile.size/(1024*1024)).toFixed(1)} MB)...`);
         const formData = new FormData();
         formData.append("file", selectedFile);
         formData.append("project_name", projectName);
+        formData.append("trim_silence", trimSilence ? "true" : "false");
         resp = await fetch("/api/upload", { method: "POST", body: formData });
       } else {
         const url = urlInput.value.trim();
@@ -193,11 +195,12 @@ function initLaunchButton() {
           btnLaunch.innerHTML = "<span>🚀 Initiate AI Production Pipeline</span>";
           return;
         }
+        const trimSilence = document.getElementById("toggle-trim-silence") ? document.getElementById("toggle-trim-silence").checked : true;
         logTerminal(`[Ingest] Fetching media stream from: ${url}...`);
         resp = await fetch("/api/process-url", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ url, project_name: projectName })
+          body: JSON.stringify({ url, project_name: projectName, trim_silence: trimSilence })
         });
       }
 
