@@ -1,0 +1,82 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Environment variables & secrets
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+*.cert
+*.pfx
+
+# Never ignore .env.example
+!.env.example
+
+# Media files (video, audio, high-res images)
+*.mp4
+*.mov
+*.avi
+*.mkv
+*.webm
+*.flv
+*.wav
+*.mp3
+*.m4a
+*.aac
+*.flac
+*.ogg
+
+# Studio inputs, assets, and rendered outputs
+agentic-video-studio/inputs/
+agentic-video-studio/renders/
+agentic-video-studio/assets/
+agentic-video-studio/analysis/
+agentic-video-studio/edit_plans/
+agentic-video-studio/reviews/
+agentic-video-studio/transcripts/
+agentic-video-studio/graphics/
+
+# OS specific files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE & Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
