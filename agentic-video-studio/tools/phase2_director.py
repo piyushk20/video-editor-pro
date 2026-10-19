@@ -58,13 +58,35 @@ def build_edit_plan(analysis: dict, transcript: dict, creative_brief: str, proje
     for h in highlights[:5]:
         clip_start = max(0, h["start"] - 1.0)
         clip_end   = min(duration, h["end"] + 1.0)
+        if (clip_end - clip_start) >= 5.0:
+            short_clips.append({
+                "label": f"Highlight_{len(short_clips)+1}",
+                "start": clip_start,
+                "end": clip_end,
+                "duration": round(clip_end - clip_start, 1),
+                "hook_text": h["text"][:60]
+            })
+
+    # If no highlights detected automatically, create default highlight segments
+    if not short_clips and duration > 10:
+        c1_end = min(duration, 35.0)
         short_clips.append({
-            "label": f"Highlight_{len(short_clips)+1}",
-            "start": clip_start,
-            "end": clip_end,
-            "duration": round(clip_end - clip_start, 1),
-            "hook_text": h["text"][:60]
+            "label": "Highlight_1_Hook",
+            "start": 0.0,
+            "end": c1_end,
+            "duration": round(c1_end, 1),
+            "hook_text": "Top takeaway & opening hook"
         })
+        if duration > 50:
+            mid_st = round(duration * 0.4, 1)
+            mid_en = min(duration, mid_st + 30.0)
+            short_clips.append({
+                "label": "Highlight_2_Core_Insight",
+                "start": mid_st,
+                "end": mid_en,
+                "duration": round(mid_en - mid_st, 1),
+                "hook_text": "Core concept & punchline"
+            })
 
     # ── Chapter markers ───────────────────────────────────────────────────
     chapter_markers = []
@@ -81,11 +103,17 @@ def build_edit_plan(analysis: dict, transcript: dict, creative_brief: str, proje
     # ── B-Roll plan ───────────────────────────────────────────────────────
     broll_plan = []
     for b in broll_ops[:10]:
+        dur = max(3.5, min(b["end"] - b["start"], 5.5))
+        # Ensure cutaway doesn't overshoot duration
+        if b["start"] + dur > duration:
+            dur = max(2.5, duration - b["start"])
+        query_words = [k for k in b.get("keywords", []) if len(k) > 2]
+        query_str = " ".join(query_words[:3]) if query_words else project_name.replace("_", " ")
         broll_plan.append({
-            "at_time": b["start"],
-            "duration": min(b["end"] - b["start"], 6.0),
-            "search_query": " ".join(b["keywords"][:3]) + " cinematic 4K",
-            "context": b["text"][:60],
+            "at_time": round(b["start"], 2),
+            "duration": round(dur, 2),
+            "search_query": query_str.strip() + " cinematic 4K",
+            "context": b.get("text", "")[:60],
             "source_priority": ["pexels", "pixabay", "mixkit"]
         })
 

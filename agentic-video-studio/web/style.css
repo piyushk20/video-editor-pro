@@ -660,3 +660,218 @@ body {
   border-color: var(--primary);
   color: #A5B4FC;
 }
+
+/* =========================================================
+   Director Script & Visual Storyboard Styles
+   ========================================================= */
+.storyboard-meta-bar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.sb-meta-card {
+  background: rgba(18, 24, 38, 0.85);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+}
+
+.sb-meta-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.sb-meta-val {
+  font-family: 'Outfit', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.storyboard-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-height: 680px;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+.storyboard-feed::-webkit-scrollbar {
+  width: 6px;
+}
+
+.storyboard-feed::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+}
+
+.storyboard-scene-card {
+  background: rgba(18, 24, 38, 0.7);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 18px 20px;
+  display: grid;
+  grid-template-columns: 140px 1fr 240px;
+  gap: 20px;
+  align-items: start;
+  transition: all 0.25s ease;
+  backdrop-filter: blur(12px);
+}
+
+.storyboard-scene-card:hover {
+  background: rgba(24, 32, 50, 0.85);
+  border-color: rgba(99, 102, 241, 0.35);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.scene-time-col {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.scene-badge-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--primary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.scene-timecode {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.scene-pacing-tag {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(99, 102, 241, 0.15);
+  color: #C7D2FE;
+  border: 1px solid rgba(99, 102, 241, 0.25);
+}
+
+.scene-script-col {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.scene-speaker {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--cyan);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.scene-dialogue {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #F1F5F9;
+  font-weight: 500;
+}
+
+.scene-director-note {
+  font-size: 11px;
+  color: var(--text-dim);
+  font-style: italic;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.scene-visual-col {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius-sm);
+  padding: 10px;
+}
+
+.visual-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  width: fit-content;
+}
+
+.visual-badge.motion-graphic {
+  background: rgba(245, 158, 11, 0.15);
+  color: #FDE68A;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.visual-badge.broll-cutaway {
+  background: rgba(6, 182, 212, 0.15);
+  color: #A5F3FC;
+  border: 1px solid rgba(6, 182, 212, 0.3);
+}
+
+.visual-badge.host-camera {
+  background: rgba(16, 185, 129, 0.15);
+  color: #A7F3D0;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.visual-thumb-wrapper {
+  width: 100%;
+  height: 90px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #000;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+
+.visual-thumb-wrapper img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.visual-thumb-wrapper img:hover {
+  transform: scale(1.08);
+}
+
+.visual-desc {
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+@media (max-width: 900px) {
+  .storyboard-scene-card {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
+

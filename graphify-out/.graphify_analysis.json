@@ -1,0 +1,274 @@
+{
+  "communities": {
+    "0": [
+      "agentic_video_studio_tools_phase3_broll_sourcer",
+      "agentic_video_studio_tools_phase3_broll_sourcer_download_clip",
+      "agentic_video_studio_tools_phase3_broll_sourcer_main",
+      "agentic_video_studio_tools_phase3_broll_sourcer_py_path",
+      "agentic_video_studio_tools_phase3_broll_sourcer_sanitise_filename",
+      "agentic_video_studio_tools_phase3_broll_sourcer_search_pexels",
+      "agentic_video_studio_tools_phase3_broll_sourcer_search_pixabay",
+      "agentic_video_studio_tools_phase3_broll_sourcer_source_broll",
+      "agentic_video_studio_tools_scrapling_broll_provider",
+      "agentic_video_studio_tools_scrapling_broll_provider_brollclip",
+      "agentic_video_studio_tools_scrapling_broll_provider_download_broll_clip",
+      "agentic_video_studio_tools_scrapling_broll_provider_main",
+      "agentic_video_studio_tools_scrapling_broll_provider_probe_video",
+      "agentic_video_studio_tools_scrapling_broll_provider_py_path",
+      "agentic_video_studio_tools_scrapling_broll_provider_rationale_179",
+      "agentic_video_studio_tools_scrapling_broll_provider_rationale_233",
+      "agentic_video_studio_tools_scrapling_broll_provider_rationale_54",
+      "agentic_video_studio_tools_scrapling_broll_provider_rationale_78",
+      "agentic_video_studio_tools_scrapling_broll_provider_sanitise_slug",
+      "agentic_video_studio_tools_scrapling_broll_provider_search_and_download_broll",
+      "agentic_video_studio_tools_scrapling_broll_provider_search_pexels_scrapling"
+    ],
+    "1": [
+      "agentic_video_studio_studio_server",
+      "agentic_video_studio_studio_server_get_job_status",
+      "agentic_video_studio_studio_server_get_project_details",
+      "agentic_video_studio_studio_server_get_projects",
+      "agentic_video_studio_studio_server_main",
+      "agentic_video_studio_studio_server_open_explorer",
+      "agentic_video_studio_studio_server_process_url",
+      "agentic_video_studio_studio_server_rationale_177",
+      "agentic_video_studio_studio_server_rationale_195",
+      "agentic_video_studio_studio_server_rationale_256",
+      "agentic_video_studio_studio_server_rationale_287",
+      "agentic_video_studio_studio_server_rationale_316",
+      "agentic_video_studio_studio_server_rationale_58",
+      "agentic_video_studio_studio_server_run_pipeline_thread",
+      "agentic_video_studio_studio_server_sync_project_to_output",
+      "agentic_video_studio_studio_server_upload_and_process",
+      "agentic_video_studio_studio_server_urlprocessrequest",
+      "basemodel",
+      "uploadfile"
+    ],
+    "2": [
+      "agentic_video_studio_web_app",
+      "agentic_video_studio_web_app_initdropzone",
+      "agentic_video_studio_web_app_initexplorerbuttons",
+      "agentic_video_studio_web_app_initlaunchbutton",
+      "agentic_video_studio_web_app_initmodetabs",
+      "agentic_video_studio_web_app_initviewtabs",
+      "agentic_video_studio_web_app_loadproject",
+      "agentic_video_studio_web_app_loadprojectslist",
+      "agentic_video_studio_web_app_logterminal",
+      "agentic_video_studio_web_app_onjobcompleted",
+      "agentic_video_studio_web_app_onjobfailed",
+      "agentic_video_studio_web_app_resetstepper",
+      "agentic_video_studio_web_app_startelapsedtimer",
+      "agentic_video_studio_web_app_startjobpolling",
+      "agentic_video_studio_web_app_stopelapsedtimer",
+      "agentic_video_studio_web_app_updatepipelineui"
+    ],
+    "3": [
+      "agentic_video_studio_tools_phase4_editor",
+      "agentic_video_studio_tools_phase4_editor_consolidate_project_folder",
+      "agentic_video_studio_tools_phase4_editor_ffmpeg_run",
+      "agentic_video_studio_tools_phase4_editor_get_broll_timeline",
+      "agentic_video_studio_tools_phase4_editor_get_graphics_timeline",
+      "agentic_video_studio_tools_phase4_editor_load_manifest",
+      "agentic_video_studio_tools_phase4_editor_load_plan",
+      "agentic_video_studio_tools_phase4_editor_main",
+      "agentic_video_studio_tools_phase4_editor_rationale_230",
+      "agentic_video_studio_tools_phase4_editor_rationale_319",
+      "agentic_video_studio_tools_phase4_editor_render_full_episode",
+      "agentic_video_studio_tools_phase4_editor_render_short_clips",
+      "agentic_video_studio_tools_phase4_editor_reviewer_score",
+      "completedprocess"
+    ],
+    "4": [
+      "agentic_video_studio_tools_phase0_input_handler",
+      "agentic_video_studio_tools_phase0_input_handler_detect_input_type",
+      "agentic_video_studio_tools_phase0_input_handler_handle_local",
+      "agentic_video_studio_tools_phase0_input_handler_handle_url",
+      "agentic_video_studio_tools_phase0_input_handler_main",
+      "agentic_video_studio_tools_silence_remover",
+      "agentic_video_studio_tools_silence_remover_detect_silences",
+      "agentic_video_studio_tools_silence_remover_get_media_duration",
+      "agentic_video_studio_tools_silence_remover_main",
+      "agentic_video_studio_tools_silence_remover_rationale_24",
+      "agentic_video_studio_tools_silence_remover_rationale_35",
+      "agentic_video_studio_tools_silence_remover_rationale_69",
+      "agentic_video_studio_tools_silence_remover_remove_silences"
+    ],
+    "5": [
+      "agentic_video_studio_tools_generate_chasing_money_graphics",
+      "agentic_video_studio_tools_generate_chasing_money_graphics_create_card_1_intro",
+      "agentic_video_studio_tools_generate_chasing_money_graphics_create_card_2_speakers",
+      "agentic_video_studio_tools_generate_chasing_money_graphics_create_card_3_myth",
+      "agentic_video_studio_tools_generate_chasing_money_graphics_create_card_4_behaviors",
+      "agentic_video_studio_tools_generate_chasing_money_graphics_create_card_5_outro",
+      "agentic_video_studio_tools_generate_chasing_money_graphics_draw_rounded_card",
+      "agentic_video_studio_tools_generate_chasing_money_graphics_get_fonts",
+      "agentic_video_studio_tools_generate_chasing_money_graphics_main",
+      "imagedraw"
+    ],
+    "6": [
+      "agentic_video_studio_tools_generate_debt_graphics",
+      "agentic_video_studio_tools_generate_debt_graphics_draw_card_base",
+      "agentic_video_studio_tools_generate_debt_graphics_get_font",
+      "agentic_video_studio_tools_generate_debt_graphics_main",
+      "agentic_video_studio_tools_generate_debt_graphics_make_baby_steps_card",
+      "agentic_video_studio_tools_generate_debt_graphics_make_intro_title",
+      "agentic_video_studio_tools_generate_debt_graphics_make_lower_third",
+      "agentic_video_studio_tools_generate_debt_graphics_make_outro_card",
+      "agentic_video_studio_tools_generate_debt_graphics_make_rainy_day_card"
+    ],
+    "7": [
+      "agentic_video_studio_tools_phase1_analyser",
+      "agentic_video_studio_tools_phase1_analyser_analyse_content",
+      "agentic_video_studio_tools_phase1_analyser_extract_audio",
+      "agentic_video_studio_tools_phase1_analyser_load_manifest",
+      "agentic_video_studio_tools_phase1_analyser_main",
+      "agentic_video_studio_tools_phase1_analyser_rationale_143",
+      "agentic_video_studio_tools_phase1_analyser_rationale_24",
+      "agentic_video_studio_tools_phase1_analyser_rationale_46",
+      "agentic_video_studio_tools_phase1_analyser_transcribe"
+    ],
+    "8": [
+      "agentic_video_studio_tools_render_chasing_money_master",
+      "agentic_video_studio_tools_render_chasing_money_master_copy_project_assets",
+      "agentic_video_studio_tools_render_chasing_money_master_main",
+      "agentic_video_studio_tools_render_chasing_money_master_render_16x9_companion",
+      "agentic_video_studio_tools_render_chasing_money_master_render_9x16_master",
+      "agentic_video_studio_tools_render_chasing_money_master_render_highlight_shorts",
+      "agentic_video_studio_tools_render_chasing_money_master_write_delivery_report"
+    ],
+    "9": [
+      "agentic_video_studio_tools_render_vertical_master",
+      "agentic_video_studio_tools_render_vertical_master_ensure_brolls",
+      "agentic_video_studio_tools_render_vertical_master_ensure_motion_graphics",
+      "agentic_video_studio_tools_render_vertical_master_main",
+      "agentic_video_studio_tools_render_vertical_master_probe_video",
+      "agentic_video_studio_tools_render_vertical_master_py_path",
+      "agentic_video_studio_tools_render_vertical_master_render_master"
+    ],
+    "10": [
+      "agentic_video_studio_tools_generate_motion_graphics",
+      "agentic_video_studio_tools_generate_motion_graphics_draw_card_base",
+      "agentic_video_studio_tools_generate_motion_graphics_generate_graphics",
+      "agentic_video_studio_tools_generate_motion_graphics_get_font",
+      "agentic_video_studio_tools_generate_motion_graphics_load_project_meta",
+      "agentic_video_studio_tools_generate_motion_graphics_main"
+    ],
+    "11": [
+      "agentic_video_studio_tools_phase2_director",
+      "agentic_video_studio_tools_phase2_director_build_edit_plan",
+      "agentic_video_studio_tools_phase2_director_load_analysis",
+      "agentic_video_studio_tools_phase2_director_load_transcript",
+      "agentic_video_studio_tools_phase2_director_main"
+    ],
+    "12": [
+      "agentic_video_studio_tools_prepare_broll_clips",
+      "agentic_video_studio_tools_prepare_broll_clips_find_image",
+      "agentic_video_studio_tools_prepare_broll_clips_main",
+      "agentic_video_studio_tools_prepare_broll_clips_py_path"
+    ],
+    "13": [
+      "agentic_video_studio_run_pipeline",
+      "agentic_video_studio_run_pipeline_main",
+      "agentic_video_studio_run_pipeline_run"
+    ]
+  },
+  "cohesion": {
+    "0": 0.18571428571428572,
+    "1": 0.1286549707602339,
+    "2": 0.25833333333333336,
+    "3": 0.27472527472527475,
+    "4": 0.24358974358974358,
+    "5": 0.5333333333333333,
+    "6": 0.6388888888888888,
+    "7": 0.3333333333333333,
+    "8": 0.5238095238095238,
+    "9": 0.5714285714285714,
+    "10": 0.6,
+    "11": 0.7,
+    "12": 0.6666666666666666,
+    "13": 1.0
+  },
+  "gods": [
+    {
+      "id": "agentic_video_studio_tools_scrapling_broll_provider_search_and_download_broll",
+      "label": "search_and_download_broll()",
+      "degree": 9
+    },
+    {
+      "id": "agentic_video_studio_tools_generate_chasing_money_graphics_draw_rounded_card",
+      "label": "draw_rounded_card()",
+      "degree": 7
+    },
+    {
+      "id": "agentic_video_studio_tools_phase3_broll_sourcer_source_broll",
+      "label": "source_broll()",
+      "degree": 7
+    },
+    {
+      "id": "agentic_video_studio_tools_phase4_editor_main",
+      "label": "main()",
+      "degree": 7
+    },
+    {
+      "id": "agentic_video_studio_tools_scrapling_broll_provider_download_broll_clip",
+      "label": "download_broll_clip()",
+      "degree": 7
+    },
+    {
+      "id": "agentic_video_studio_tools_silence_remover_remove_silences",
+      "label": "remove_silences()",
+      "degree": 7
+    },
+    {
+      "id": "agentic_video_studio_tools_generate_chasing_money_graphics_get_fonts",
+      "label": "get_fonts()",
+      "degree": 6
+    },
+    {
+      "id": "agentic_video_studio_tools_generate_chasing_money_graphics_main",
+      "label": "main()",
+      "degree": 6
+    },
+    {
+      "id": "agentic_video_studio_tools_generate_debt_graphics_get_font",
+      "label": "get_font()",
+      "degree": 6
+    },
+    {
+      "id": "agentic_video_studio_tools_generate_debt_graphics_draw_card_base",
+      "label": "draw_card_base()",
+      "degree": 6
+    }
+  ],
+  "surprises": [
+    {
+      "source": "main()",
+      "target": "remove_silences()",
+      "source_files": [
+        "agentic-video-studio/tools/phase0_input_handler.py",
+        "agentic-video-studio/tools/silence_remover.py"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "cross-file semantic connection"
+    },
+    {
+      "source": "source_broll()",
+      "target": "search_and_download_broll()",
+      "source_files": [
+        "agentic-video-studio/tools/phase3_broll_sourcer.py",
+        "agentic-video-studio/tools/scrapling_broll_provider.py"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "cross-file semantic connection"
+    }
+  ],
+  "questions": [
+    {
+      "type": "low_cohesion",
+      "question": "Should `studio_server.py` be split into smaller, more focused modules?",
+      "why": "Cohesion score 0.1286549707602339 - nodes in this community are weakly interconnected."
+    }
+  ]
+}

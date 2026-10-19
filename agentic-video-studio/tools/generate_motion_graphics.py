@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 """
-Generates large, high-visibility, professional broadcast motion graphic cards (1920x1080 RGBA)
-specifically anchored to the LEFT safe zone (x: 60-880) so they NEVER touch or obstruct the speaker's face (which is on the right x: 960-1800).
+Universal Dynamic Motion Graphics Generator for Agentic Video Studio.
+Generates large, high-visibility, professional broadcast motion graphic cards (RGBA)
+specifically anchored to the safe zone (never obstructing the speaker's face).
+Accepts project_name as CLI argument and dynamically extracts title, concepts, and hooks.
 """
-import os
+import os, sys, json
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 
 STUDIO_ROOT = Path(__file__).parent.parent
-GRAPHICS_DIR = STUDIO_ROOT / "graphics" / "trap_of_comparison"
-GRAPHICS_DIR.mkdir(parents=True, exist_ok=True)
 
 def get_font(size: int, bold: bool = False):
     font_paths = [
@@ -26,183 +26,177 @@ def get_font(size: int, bold: bool = False):
     return ImageFont.load_default()
 
 def draw_card_base(draw, x0, y0, x1, y1, radius=22, outline=(245, 166, 35, 255), fill=(12, 16, 28, 255)):
-    # Draw drop shadow
+    # Drop shadow
     draw.rounded_rectangle((x0 + 8, y0 + 10, x1 + 8, y1 + 10), radius=radius, fill=(0, 0, 0, 160))
-    # Draw solid opaque card
+    # Solid opaque card
     draw.rounded_rectangle((x0, y0, x1, y1), radius=radius, fill=fill, outline=outline, width=3)
 
-def make_intro_title():
-    img = Image.new("RGBA", (1920, 1080), (0, 0, 0, 0))
-    draw = ImageDraw.Draw(img)
-    
-    # Left safe zone: x from 60 to 880, y from 130 to 530
-    x0, y0, x1, y1 = 60, 130, 880, 530
-    draw_card_base(draw, x0, y0, x1, y1, outline=(245, 166, 35, 255), fill=(12, 16, 28, 255))
+def load_project_meta(project_name: str) -> dict:
+    meta = {
+        "title": project_name.replace("_", " ").title(),
+        "eyebrow": "MASTERCLASS EDIT",
+        "subtitle": "Essential lessons and high-impact takeaways.",
+        "speaker": "Speaker",
+        "role": "Topic Expert",
+        "pillars": [
+            ("1", "Core foundational principle", "Clarity"),
+            ("2", "Actionable everyday implementation", "Execution"),
+            ("3", "Long-term sustainable freedom", "Impact")
+        ],
+        "insight_title": "KEY SHIFT & INSIGHT",
+        "insight_text": "Focus on internal growth rather than constant comparison.",
+        "outro_heading": "TAKE ACTION TODAY",
+        "outro_sub": "Subscribe for daily deep-dive insights."
+    }
+
+    # Try manifest
+    mf_path = STUDIO_ROOT / "inputs" / project_name / "manifest.json"
+    if mf_path.exists():
+        try:
+            with open(mf_path) as f:
+                mf = json.load(f)
+                if mf.get("title"):
+                    raw_t = mf["title"].replace("clip_", "").replace("_", " ")
+                    meta["title"] = raw_t.strip().title()
+        except Exception:
+            pass
+
+    # Try edit plan
+    ep_path = STUDIO_ROOT / "edit_plans" / f"{project_name}_edit_plan.json"
+    if ep_path.exists():
+        try:
+            with open(ep_path) as f:
+                ep = json.load(f)
+                if ep.get("title"):
+                    meta["title"] = ep["title"]
+                if ep.get("creative_brief"):
+                    meta["subtitle"] = ep["creative_brief"]
+        except Exception:
+            pass
+
+    # Customize for known topics if detected in project name
+    p_lower = project_name.lower()
+    if "social" in p_lower or "algo" in p_lower:
+        meta["eyebrow"] = "DIGITAL PSYCHOLOGY"
+        meta["title"] = "Social Media Algorithms"
+        meta["subtitle"] = "How modern feeds distort reality and focus."
+        meta["speaker"] = "Analysis"
+        meta["role"] = "Behavioral & Tech Insights"
+        meta["pillars"] = [
+            ("1", "Attention is the primary digital currency", "Awareness"),
+            ("2", "Algorithms optimize for outrage and retention", "Psychology"),
+            ("3", "Reclaim intentional focus and mental clarity", "Freedom")
+        ]
+        meta["insight_title"] = "THE FEED PARADOX"
+        meta["insight_text"] = "You don't scroll the algorithm. The algorithm scrolls you."
+    elif "debt" in p_lower or "snowball" in p_lower:
+        meta["eyebrow"] = "FINANCIAL FREEDOM"
+        meta["title"] = "Debt Snowball Blueprint"
+        meta["subtitle"] = "Pay off debt with unstoppable momentum."
+        meta["speaker"] = "Dave Ramsey"
+        meta["role"] = "Personal Finance Expert"
+    elif "money" in p_lower:
+        meta["eyebrow"] = "WEALTH STRATEGY"
+        meta["title"] = "Stop Chasing Money"
+        meta["subtitle"] = "Align daily habits with true independence."
+        meta["speaker"] = "Mel Robbins & Morgan Housel"
+        meta["role"] = "Authors & Strategists"
+
+    return meta
+
+def generate_graphics(project_name: str):
+    graphics_dir = STUDIO_ROOT / "graphics" / project_name
+    graphics_dir.mkdir(parents=True, exist_ok=True)
+    meta = load_project_meta(project_name)
+
+    # 1. Intro Title Card (1080x1920 canvas for 9:16 safe zone)
+    img_intro = Image.new("RGBA", (1080, 1920), (0, 0, 0, 0))
+    draw_i = ImageDraw.Draw(img_intro)
+    x0, y0, x1, y1 = 60, 140, 1020, 560
+    draw_card_base(draw_i, x0, y0, x1, y1, outline=(245, 166, 35, 255), fill=(12, 16, 28, 255))
     
     # Eyebrow pill
-    draw.rounded_rectangle((x0 + 35, y0 + 30, x0 + 440, y0 + 72), radius=10, fill=(245, 166, 35, 50), outline=(245, 166, 35, 220), width=1)
-    draw.text((x0 + 48, y0 + 38), "FINANCIAL MINDSET MASTERCLASS", fill=(255, 195, 60, 255), font=get_font(21, bold=True))
+    draw_i.rounded_rectangle((x0 + 35, y0 + 30, x0 + 440, y0 + 72), radius=10, fill=(245, 166, 35, 50), outline=(245, 166, 35, 220), width=1)
+    draw_i.text((x0 + 48, y0 + 38), meta["eyebrow"], fill=(255, 195, 60, 255), font=get_font(21, bold=True))
     
-    # Headlines
-    draw.text((x0 + 35, y0 + 90), "THE TRAP OF", fill=(255, 255, 255, 255), font=get_font(52, bold=True))
-    draw.text((x0 + 35, y0 + 155), "COMPARISON", fill=(245, 166, 35, 255), font=get_font(68, bold=True))
+    # Title
+    title_words = meta["title"].split(" ")
+    line1 = " ".join(title_words[:3])
+    line2 = " ".join(title_words[3:]) if len(title_words) > 3 else ""
+    draw_i.text((x0 + 35, y0 + 95), line1.upper()[:24], fill=(255, 255, 255, 255), font=get_font(46, bold=True))
+    if line2:
+        draw_i.text((x0 + 35, y0 + 155), line2.upper()[:24], fill=(245, 166, 35, 255), font=get_font(46, bold=True))
     
     # Subtitle
-    draw.text((x0 + 38, y0 + 255), "Why measuring success against others", fill=(225, 235, 245, 255), font=get_font(27, bold=False))
-    draw.text((x0 + 38, y0 + 295), "destroys true wealth and peace of mind.", fill=(225, 235, 245, 255), font=get_font(27, bold=False))
+    draw_i.text((x0 + 38, y0 + 240), meta["subtitle"][:48], fill=(225, 235, 245, 255), font=get_font(25, bold=False))
+    if len(meta["subtitle"]) > 48:
+        draw_i.text((x0 + 38, y0 + 275), meta["subtitle"][48:96], fill=(225, 235, 245, 255), font=get_font(25, bold=False))
     
-    out_path = GRAPHICS_DIR / "01_intro_title.png"
-    img.save(out_path)
-    print(f"Generated large left-anchored intro: {out_path}")
-    return out_path
+    p1 = graphics_dir / "01_intro_title.png"
+    img_intro.save(p1)
 
-def make_lower_third():
-    img = Image.new("RGBA", (1920, 1080), (0, 0, 0, 0))
-    draw = ImageDraw.Draw(img)
-    
-    # Left anchored at bottom: x: 60 to 860, y: 670 to 865
-    x0, y0, x1, y1 = 60, 670, 860, 865
-    draw_card_base(draw, x0, y0, x1, y1, outline=(245, 166, 35, 240), fill=(10, 14, 25, 255))
-    
-    # Vertical gold accent bar
-    draw.rounded_rectangle((x0 + 20, y0 + 22, x0 + 32, y1 - 22), radius=4, fill=(245, 166, 35, 255))
-    
-    # Speaker details
-    draw.text((x0 + 50, y0 + 28), "MORGAN HOUSEL", fill=(255, 255, 255, 255), font=get_font(44, bold=True))
-    draw.text((x0 + 50, y0 + 88), "Author of 'The Psychology of Money'", fill=(245, 185, 75, 255), font=get_font(27, bold=False))
-    draw.text((x0 + 50, y0 + 130), "Former Wall Street Journal Financial Columnist", fill=(175, 195, 215, 240), font=get_font(22, bold=False))
-    
-    out_path = GRAPHICS_DIR / "02_lower_third.png"
-    img.save(out_path)
-    print(f"Generated large lower-third: {out_path}")
-    return out_path
+    # 2. Lower Third / Speaker Card
+    img_lt = Image.new("RGBA", (1080, 1920), (0, 0, 0, 0))
+    draw_lt = ImageDraw.Draw(img_lt)
+    x0, y0, x1, y1 = 60, 180, 1020, 480
+    draw_card_base(draw_lt, x0, y0, x1, y1, outline=(10, 132, 255, 240), fill=(10, 14, 25, 255))
+    draw_lt.rounded_rectangle((x0 + 20, y0 + 22, x0 + 32, y1 - 22), radius=4, fill=(10, 132, 255, 255))
+    draw_lt.text((x0 + 50, y0 + 35), meta["speaker"].upper(), fill=(255, 255, 255, 255), font=get_font(42, bold=True))
+    draw_lt.text((x0 + 50, y0 + 95), meta["role"], fill=(10, 160, 255, 255), font=get_font(26, bold=False))
+    draw_lt.text((x0 + 50, y0 + 135), "Exclusive Masterclass Breakdown", fill=(175, 195, 215, 240), font=get_font(22, bold=False))
+    p2 = graphics_dir / "02_lower_third.png"
+    img_lt.save(p2)
 
-def make_core_pillars_card():
-    img = Image.new("RGBA", (1920, 1080), (0, 0, 0, 0))
-    draw = ImageDraw.Draw(img)
+    # 3. Concept Pillars Card
+    img_pil = Image.new("RGBA", (1080, 1920), (0, 0, 0, 0))
+    draw_p = ImageDraw.Draw(img_pil)
+    x0, y0, x1, y1 = 60, 140, 1020, 620
+    draw_card_base(draw_p, x0, y0, x1, y1, outline=(52, 199, 89, 255), fill=(10, 15, 28, 255))
+    draw_p.text((x0 + 35, y0 + 24), "CORE TAKEAWAYS", fill=(52, 199, 89, 255), font=get_font(32, bold=True))
     
-    # Left safe zone: x: 60 to 880, y: 120 to 665
-    x0, y0, x1, y1 = 60, 120, 880, 665
-    draw_card_base(draw, x0, y0, x1, y1, outline=(10, 132, 255, 255), fill=(10, 15, 28, 255))
-    
-    draw.text((x0 + 35, y0 + 28), "WHAT PEOPLE ACTUALLY WANT", fill=(10, 160, 255, 255), font=get_font(33, bold=True))
-    draw.text((x0 + 35, y0 + 74), "The 3 Non-Negotiable Pillars of True Wealth:", fill=(200, 215, 230, 240), font=get_font(23, bold=False))
-    
-    pillars = [
-        ("1", "Stable housing for myself and my family", "Security"),
-        ("2", "A financial cushion to fall back on in emergencies", "Resilience"),
-        ("3", "Freedom to spend meaningful time with children", "Independence")
-    ]
-    
-    for i, (num, text, tag) in enumerate(pillars):
-        item_y0 = y0 + 120 + (i * 118)
-        item_y1 = item_y0 + 98
-        draw.rounded_rectangle((x0 + 35, item_y0, x1 - 35, item_y1), radius=14, fill=(18, 26, 42, 255), outline=(255, 255, 255, 40), width=2)
-        
-        # Check badge
-        draw.ellipse((x0 + 55, item_y0 + 24, x0 + 102, item_y0 + 72), fill=(52, 199, 89, 255))
-        draw.text((x0 + 68, item_y0 + 30), "✓", fill=(255, 255, 255, 255), font=get_font(28, bold=True))
-        
-        # Text
-        draw.text((x0 + 120, item_y0 + 20), text, fill=(255, 255, 255, 255), font=get_font(24, bold=True))
-        draw.text((x0 + 120, item_y0 + 56), f"Core Value: {tag}", fill=(52, 199, 89, 255), font=get_font(20, bold=False))
-        
-    out_path = GRAPHICS_DIR / "03_pillars_card.png"
-    img.save(out_path)
-    print(f"Generated large pillars card: {out_path}")
-    return out_path
+    for i, (num, text, tag) in enumerate(meta["pillars"]):
+        item_y0 = y0 + 75 + (i * 120)
+        item_y1 = item_y0 + 105
+        draw_p.rounded_rectangle((x0 + 35, item_y0, x1 - 35, item_y1), radius=14, fill=(18, 26, 42, 255), outline=(255, 255, 255, 40), width=2)
+        draw_p.ellipse((x0 + 55, item_y0 + 24, x0 + 105, item_y0 + 74), fill=(52, 199, 89, 255))
+        draw_p.text((x0 + 72, item_y0 + 30), num, fill=(10, 15, 28, 255), font=get_font(26, bold=True))
+        draw_p.text((x0 + 125, item_y0 + 22), text[:35], fill=(255, 255, 255, 255), font=get_font(23, bold=True))
+        draw_p.text((x0 + 125, item_y0 + 58), f"Focus: {tag}", fill=(52, 199, 89, 255), font=get_font(19, bold=False))
+    p3 = graphics_dir / "03_pillars_card.png"
+    img_pil.save(p3)
 
-def make_comparison_card():
-    img = Image.new("RGBA", (1920, 1080), (0, 0, 0, 0))
-    draw = ImageDraw.Draw(img)
-    
-    # Left safe zone: x: 60 to 880, y: 110 to 690 (Never touches speaker face on right)
-    x0, y0, x1, y1 = 60, 110, 880, 690
-    draw_card_base(draw, x0, y0, x1, y1, outline=(245, 166, 35, 255), fill=(10, 14, 25, 255))
-    
-    draw.text((x0 + 35, y0 + 28), "THE MONEY MINDSET SHIFT", fill=(255, 215, 90, 255), font=get_font(33, bold=True))
-    draw.text((x0 + 35, y0 + 72), "Two fundamentally different ways people relate to money:", fill=(200, 210, 225, 240), font=get_font(21, bold=False))
-    
-    # Box 1: AS A TOOL (Green)
-    bx_y0 = y0 + 115
-    bx_y1 = bx_y0 + 190
-    draw.rounded_rectangle((x0 + 35, bx_y0, x1 - 35, bx_y1), radius=15, fill=(16, 42, 28, 255), outline=(52, 199, 89, 255), width=2)
-    draw.text((x0 + 55, bx_y0 + 20), "1. MONEY AS A TOOL (Freedom)", fill=(52, 199, 89, 255), font=get_font(28, bold=True))
-    draw.text((x0 + 55, bx_y0 + 66), "• Used to live a better, calmer, fulfilling life", fill=(240, 255, 245, 255), font=get_font(23, bold=False))
-    draw.text((x0 + 55, bx_y0 + 104), "• Control over your daily calendar and peace", fill=(240, 255, 245, 255), font=get_font(23, bold=False))
-    draw.text((x0 + 55, bx_y0 + 144), "• Outcome: Permanent autonomy and security", fill=(160, 240, 180, 255), font=get_font(21, bold=True))
-    
-    # Box 2: AS A YARDSTICK (Red)
-    rx_y0 = bx_y1 + 24
-    rx_y1 = rx_y0 + 190
-    draw.rounded_rectangle((x0 + 35, rx_y0, x1 - 35, rx_y1), radius=15, fill=(45, 18, 24, 255), outline=(255, 69, 58, 255), width=2)
-    draw.text((x0 + 55, rx_y0 + 20), "2. MONEY AS A YARDSTICK (The Trap)", fill=(255, 69, 58, 255), font=get_font(28, bold=True))
-    draw.text((x0 + 55, rx_y0 + 66), "• Measuring yourself against other people", fill=(255, 235, 235, 255), font=get_font(23, bold=False))
-    draw.text((x0 + 55, rx_y0 + 104), "• Always moving the goalpost; comparison has no end", fill=(255, 235, 235, 255), font=get_font(23, bold=False))
-    draw.text((x0 + 55, rx_y0 + 144), "• Outcome: Perpetual anxiety and insecurity", fill=(255, 160, 160, 255), font=get_font(21, bold=True))
-    
-    out_path = GRAPHICS_DIR / "04_comparison_card.png"
-    img.save(out_path)
-    print(f"Generated large comparison card: {out_path}")
-    return out_path
+    # 4. Insight / Quote Card
+    img_q = Image.new("RGBA", (1080, 1920), (0, 0, 0, 0))
+    draw_q = ImageDraw.Draw(img_q)
+    x0, y0, x1, y1 = 60, 150, 1020, 540
+    draw_card_base(draw_q, x0, y0, x1, y1, outline=(255, 149, 0, 255), fill=(12, 16, 28, 255))
+    draw_q.text((x0 + 35, y0 + 24), meta["insight_title"], fill=(255, 149, 0, 255), font=get_font(30, bold=True))
+    draw_q.text((x0 + 35, y0 + 80), f"“{meta['insight_text'][:42]}", fill=(255, 255, 255, 255), font=get_font(30, bold=True))
+    if len(meta["insight_text"]) > 42:
+        draw_q.text((x0 + 35, y0 + 125), f"{meta['insight_text'][42:85]}”", fill=(255, 255, 255, 255), font=get_font(30, bold=True))
+    draw_q.line((x0 + 35, y0 + 190, x1 - 35, y0 + 190), fill=(255, 255, 255, 40), width=1)
+    draw_q.text((x0 + 35, y0 + 215), "Proven Mindset Framework", fill=(225, 235, 245, 255), font=get_font(22, bold=False))
+    p4 = graphics_dir / "04_insight_card.png"
+    img_q.save(p4)
 
-def make_quote_card():
-    img = Image.new("RGBA", (1920, 1080), (0, 0, 0, 0))
-    draw = ImageDraw.Draw(img)
-    
-    # Left safe zone: x: 60 to 880, y: 150 to 620
-    x0, y0, x1, y1 = 60, 150, 880, 620
-    draw_card_base(draw, x0, y0, x1, y1, outline=(245, 166, 35, 255), fill=(12, 16, 28, 255))
-    
-    # Big quotation mark
-    draw.text((x0 + 35, y0 + 15), "“", fill=(245, 166, 35, 220), font=get_font(88, bold=True))
-    
-    # Quote text
-    draw.text((x0 + 110, y0 + 50), "Not 'how big is my house'...", fill=(255, 255, 255, 255), font=get_font(38, bold=True))
-    draw.text((x0 + 110, y0 + 110), "but 'how big relative to that guy?'", fill=(255, 195, 75, 255), font=get_font(40, bold=True))
-    
-    draw.line((x0 + 45, y0 + 205, x1 - 45, y0 + 205), fill=(255, 255, 255, 40), width=1)
-    
-    draw.text((x0 + 45, y0 + 230), "THE SOCIAL COMPARISON PARADOX", fill=(245, 166, 35, 255), font=get_font(23, bold=True))
-    draw.text((x0 + 45, y0 + 275), "Status is a relative game with no winner.", fill=(220, 230, 245, 255), font=get_font(25, bold=False))
-    draw.text((x0 + 45, y0 + 315), "True wealth is playing your own game.", fill=(220, 230, 245, 255), font=get_font(25, bold=False))
-    draw.text((x0 + 45, y0 + 375), "— Morgan Housel", fill=(160, 180, 205, 230), font=get_font(23, bold=True))
-    
-    out_path = GRAPHICS_DIR / "05_quote_card.png"
-    img.save(out_path)
-    print(f"Generated large quote card: {out_path}")
-    return out_path
+    # 5. Outro Card
+    img_o = Image.new("RGBA", (1080, 1920), (0, 0, 0, 0))
+    draw_o = ImageDraw.Draw(img_o)
+    x0, y0, x1, y1 = 60, 150, 1020, 520
+    draw_card_base(draw_o, x0, y0, x1, y1, outline=(245, 166, 35, 255), fill=(10, 14, 25, 255))
+    draw_o.text((x0 + 40, y0 + 35), meta["outro_heading"], fill=(255, 255, 255, 255), font=get_font(36, bold=True))
+    draw_o.text((x0 + 40, y0 + 90), meta["outro_sub"], fill=(225, 235, 245, 255), font=get_font(24, bold=False))
+    draw_o.rounded_rectangle((x0 + 40, y0 + 155, x1 - 40, y0 + 235), radius=16, fill=(245, 166, 35, 255))
+    draw_o.text((x0 + 65, y0 + 180), "🔔 SUBSCRIBE & SAVE THIS LESSON", fill=(10, 15, 28, 255), font=get_font(24, bold=True))
+    p5 = graphics_dir / "05_outro_card.png"
+    img_o.save(p5)
 
-def make_outro_card():
-    img = Image.new("RGBA", (1920, 1080), (0, 0, 0, 0))
-    draw = ImageDraw.Draw(img)
-    
-    # Left safe zone: x: 60 to 880, y: 150 to 590
-    x0, y0, x1, y1 = 60, 150, 880, 590
-    draw_card_base(draw, x0, y0, x1, y1, outline=(245, 166, 35, 255), fill=(10, 14, 25, 255))
-    
-    draw.text((x0 + 40, y0 + 40), "DEFINE SUCCESS ON YOUR TERMS", fill=(255, 255, 255, 255), font=get_font(40, bold=True))
-    draw.text((x0 + 40, y0 + 110), "Stop running someone else's race.", fill=(225, 235, 245, 255), font=get_font(27, bold=False))
-    draw.text((x0 + 40, y0 + 150), "Build freedom, independence, and peace of mind.", fill=(225, 235, 245, 255), font=get_font(27, bold=False))
-    
-    # Big CTA Button
-    draw.rounded_rectangle((x0 + 40, y0 + 240, x0 + 620, y0 + 315), radius=16, fill=(245, 166, 35, 255))
-    draw.text((x0 + 70, y0 + 260), "🔔 SUBSCRIBE FOR DAILY WEALTH WISDOM", fill=(10, 15, 28, 255), font=get_font(25, bold=True))
-    
-    out_path = GRAPHICS_DIR / "06_outro_card.png"
-    img.save(out_path)
-    print(f"Generated large outro card: {out_path}")
-    return out_path
+    print(f"[OK] Generated 5 motion graphics cards in: {graphics_dir}")
+    return [p1, p2, p3, p4, p5]
 
 def main():
-    print("Generating redesigned large, left-anchored motion graphic cards...")
-    make_intro_title()
-    make_lower_third()
-    make_core_pillars_card()
-    make_comparison_card()
-    make_quote_card()
-    make_outro_card()
-    print("All 6 cards regenerated and placed safely on left side (x: 60-880) completely away from speaker's face!")
+    proj = sys.argv[1] if len(sys.argv) > 1 else "trap_of_comparison"
+    generate_graphics(proj)
 
 if __name__ == "__main__":
     main()

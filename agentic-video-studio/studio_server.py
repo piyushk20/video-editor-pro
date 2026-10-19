@@ -68,7 +68,7 @@ def sync_project_to_output(project_name: str):
                 shutil.copy2(item, target)
 
 
-def run_pipeline_thread(job_id: str, input_path: str, project_name: str, trim_silence: bool = True):
+def run_pipeline_thread(job_id: str, input_path: str, project_name: str, trim_silence: bool = True, confirm_before_render: bool = True):
     job = JOBS[job_id]
     job["status"] = "running"
     
@@ -135,24 +135,41 @@ def run_pipeline_thread(job_id: str, input_path: str, project_name: str, trim_si
         log("Phase 3: Sourcing copyright-free B-roll via Scrapling & generating safe-zone motion cards...")
         cmd_p3 = [sys.executable, str(STUDIO_ROOT / "tools" / "phase3_broll_sourcer.py"), project_name]
         p3 = subprocess.run(cmd_p3, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, cwd=str(STUDIO_ROOT))
-        log("Phase 3 Complete: Sourced 4K vertical clips and rendered motion cards.")
+        
+        # Ensure Motion Graphics cards are generated
+        cmd_gfx = [sys.executable, str(STUDIO_ROOT / "tools" / "generate_motion_graphics.py"), project_name]
+        subprocess.run(cmd_gfx, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, cwd=str(STUDIO_ROOT))
+
+        # Generate Crisp Storyboard & Script
+        cmd_sb = [sys.executable, str(STUDIO_ROOT / "tools" / "generate_script_storyboard.py"), project_name]
+        subprocess.run(cmd_sb, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, cwd=str(STUDIO_ROOT))
+        log("Phase 3 Complete: Sourced B-Roll footage, motion cards, and structured director script.")
+
+        # Pre-Render Confirmation Gate
+        if confirm_before_render:
+            job["phase"] = 3
+            job["progress"] = 75
+            job["status"] = "awaiting_confirmation"
+            event = threading.Event()
+            job["confirm_event"] = event
+            log("⚡ Script & Visual Storyboard ready! Please review the Storyboard tab. Click 'Confirm Script & Proceed to Final Render' when ready.")
+            confirmed = event.wait(timeout=1800)
+            if not confirmed:
+                log("Confirmation timed out after 30 mins. Halting before Phase 4.")
+                return
+            job["status"] = "running"
+            log("✅ Storyboard confirmed by user! Launching Phase 4 master compositing...")
 
         # Phase 4: Master Assembly
         job["phase"] = 4
         job["progress"] = 85
         log("Phase 4: Compositing 9:16 vertical master, 16:9 companion, and highlight shorts...")
-        # Check if project-specific master exists, otherwise use standard phase4_editor
-        specific_compositor = STUDIO_ROOT / "tools" / f"render_{project_name}_master.py"
-        if specific_compositor.exists():
-            cmd_p4 = [sys.executable, str(specific_compositor)]
-        elif (STUDIO_ROOT / "tools" / "render_vertical_master.py").exists():
-            cmd_p4 = [sys.executable, str(STUDIO_ROOT / "tools" / "render_vertical_master.py"), project_name]
-        else:
-            cmd_p4 = [sys.executable, str(STUDIO_ROOT / "tools" / "phase4_editor.py"), project_name]
-
+        # Execute Universal 9:16 Master Compositor
+        cmd_p4 = [sys.executable, str(STUDIO_ROOT / "tools" / "render_vertical_master.py"), project_name]
         p4 = subprocess.run(cmd_p4, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, cwd=str(STUDIO_ROOT))
         if p4.returncode != 0:
-            raise RuntimeError(f"Phase 4 failed: {p4.stderr[:400]}")
+            err_msg = p4.stderr[-400:] if p4.stderr else p4.stdout[-400:]
+            raise RuntimeError(f"Phase 4 failed: {err_msg}")
         
         # Sync to output/ folder
         sync_project_to_output(project_name)
@@ -172,6 +189,7 @@ class UrlProcessRequest(BaseModel):
     url: str
     project_name: str
     trim_silence: bool = True
+    confirm_before_render: bool = True
 
 
 @app.get("/api/projects")
@@ -253,7 +271,8 @@ def get_project_details(project_name: str):
 async def upload_and_process(
     file: UploadFile = File(...),
     project_name: str = Form(...),
-    trim_silence: str = Form("true")
+    trim_silence: str = Form("true"),
+    confirm_before_render: str = Form("true")
 ):
     """Handle drag & drop file upload and start pipeline."""
     slug = "".join(c if c.isalnum() or c in "_-" else "_" for c in project_name).strip("_")
@@ -278,7 +297,12 @@ async def upload_and_process(
     }
 
     should_trim = trim_silence.lower() in ("true", "1", "yes")
-    t = threading.Thread(target=run_pipeline_thread, args=(job_id, str(dest_file), slug, should_trim), daemon=True)
+    should_confirm = confirm_before_render.lower() in ("true", "1", "yes")
+    t = threading.Thread(
+        target=run_pipeline_thread,
+        args=(job_id, str(dest_file), slug, should_trim, should_confirm),
+        daemon=True
+    )
     t.start()
 
     return {"job_id": job_id, "project_name": slug}
@@ -300,7 +324,11 @@ def process_url(req: UrlProcessRequest):
         "error": None
     }
 
-    t = threading.Thread(target=run_pipeline_thread, args=(job_id, req.url, slug, req.trim_silence), daemon=True)
+    t = threading.Thread(
+        target=run_pipeline_thread,
+        args=(job_id, req.url, slug, req.trim_silence, req.confirm_before_render),
+        daemon=True
+    )
     t.start()
 
     return {"job_id": job_id, "project_name": slug}
@@ -310,7 +338,47 @@ def process_url(req: UrlProcessRequest):
 def get_job_status(job_id: str):
     if job_id not in JOBS:
         raise HTTPException(status_code=404, detail="Job not found")
-    return JOBS[job_id]
+    res = dict(JOBS[job_id])
+    if "confirm_event" in res:
+        del res["confirm_event"]
+    return res
+
+
+@app.post("/api/job/{job_id}/confirm")
+def confirm_job_render(job_id: str):
+    """Confirm the script & storyboard review and launch final Phase 4 master rendering."""
+    if job_id not in JOBS:
+        raise HTTPException(status_code=404, detail="Job not found")
+    job = JOBS[job_id]
+    if "confirm_event" in job and job["confirm_event"]:
+        job["confirm_event"].set()
+        return {"status": "confirmed", "message": "Storyboard confirmed. Proceeding to final render."}
+    return {"status": "not_waiting", "message": "Job is not currently waiting for confirmation."}
+
+
+@app.get("/api/project/{project_name}/storyboard")
+def get_project_storyboard(project_name: str):
+    """Fetch complete script, timestamps, and visual snippets for a project."""
+    sb_file = OUTPUT_DIR / project_name / "storyboard.json"
+    if not sb_file.exists():
+        sb_file = RENDERS_DIR / project_name / "storyboard.json"
+    
+    if not sb_file.exists():
+        # Generate on the fly
+        cmd = [sys.executable, str(STUDIO_ROOT / "tools" / "generate_script_storyboard.py"), project_name]
+        subprocess.run(cmd, capture_output=True, text=True, cwd=str(STUDIO_ROOT))
+        cand_out = OUTPUT_DIR / project_name / "storyboard.json"
+        cand_ren = RENDERS_DIR / project_name / "storyboard.json"
+        sb_file = cand_out if cand_out.exists() else cand_ren
+
+    if sb_file.exists():
+        try:
+            with open(sb_file, encoding="utf-8") as f:
+                return json.load(f)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to read storyboard: {e}")
+    
+    raise HTTPException(status_code=404, detail="Storyboard not found")
 
 
 @app.post("/api/open-explorer")
@@ -327,6 +395,18 @@ def open_explorer(project: str = "stop_chasing_money"):
         subprocess.Popen(["explorer", path_str])
     return {"status": "ok", "path": path_str}
 
+
+# Mount Static Directories for Media, Graphics, Graphify and Outputs
+GRAPHICS_DIR = STUDIO_ROOT / "graphics"
+ASSETS_DIR = STUDIO_ROOT / "assets"
+GRAPHIFY_DIR = WORKSPACE_ROOT / "graphify-out"
+
+if GRAPHICS_DIR.exists():
+    app.mount("/graphics", StaticFiles(directory=str(GRAPHICS_DIR)), name="graphics")
+if ASSETS_DIR.exists():
+    app.mount("/assets", StaticFiles(directory=str(ASSETS_DIR)), name="assets")
+if GRAPHIFY_DIR.exists():
+    app.mount("/graphify-out", StaticFiles(directory=str(GRAPHIFY_DIR), html=True), name="graphify")
 
 # Mount the output directory for video streaming
 app.mount("/output", StaticFiles(directory=str(OUTPUT_DIR)), name="output")

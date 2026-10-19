@@ -14,6 +14,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initViewTabs();
   initExplorerButtons();
   initLaunchButton();
+  initConfirmRenderButton();
   loadProjectsList();
 });
 
@@ -98,41 +99,46 @@ function initDropzone() {
   }
 }
 
-// View Tabs (9:16 vs 16:9 vs Shorts)
+// View Tabs (9:16 vs 16:9 vs Shorts vs Storyboard)
 function initViewTabs() {
   const tab9x16 = document.getElementById("tab-view-9x16");
   const tab16x9 = document.getElementById("tab-view-16x9");
   const tabShorts = document.getElementById("tab-view-shorts");
+  const tabStoryboard = document.getElementById("tab-view-storyboard");
 
   const view9x16 = document.getElementById("view-container-9x16");
   const view16x9 = document.getElementById("view-container-16x9");
   const viewShorts = document.getElementById("view-container-shorts");
+  const viewStoryboard = document.getElementById("view-container-storyboard");
+
+  const hideAllViews = () => {
+    [tab9x16, tab16x9, tabShorts, tabStoryboard].forEach(t => t.classList.remove("active"));
+    [view9x16, view16x9, viewShorts, viewStoryboard].forEach(v => v.style.display = "none");
+  };
 
   tab9x16.addEventListener("click", () => {
+    hideAllViews();
     tab9x16.classList.add("active");
-    tab16x9.classList.remove("active");
-    tabShorts.classList.remove("active");
     view9x16.style.display = "flex";
-    view16x9.style.display = "none";
-    viewShorts.style.display = "none";
   });
 
   tab16x9.addEventListener("click", () => {
+    hideAllViews();
     tab16x9.classList.add("active");
-    tab9x16.classList.remove("active");
-    tabShorts.classList.remove("active");
-    view9x16.style.display = "none";
     view16x9.style.display = "block";
-    viewShorts.style.display = "none";
   });
 
   tabShorts.addEventListener("click", () => {
+    hideAllViews();
     tabShorts.classList.add("active");
-    tab9x16.classList.remove("active");
-    tab16x9.classList.remove("active");
-    view9x16.style.display = "none";
-    view16x9.style.display = "none";
     viewShorts.style.display = "block";
+  });
+
+  tabStoryboard.addEventListener("click", () => {
+    hideAllViews();
+    tabStoryboard.classList.add("active");
+    viewStoryboard.style.display = "block";
+    loadStoryboard(currentProject);
   });
 }
 
@@ -154,6 +160,34 @@ function initExplorerButtons() {
   btnOutput.addEventListener("click", triggerExplorer);
 }
 
+// Confirmation Button Handler
+function initConfirmRenderButton() {
+  const btnConfirm = document.getElementById("btn-confirm-render");
+  if (!btnConfirm) return;
+
+  btnConfirm.addEventListener("click", async () => {
+    btnConfirm.disabled = true;
+    btnConfirm.textContent = "⏳ Submitting Approval...";
+
+    try {
+      if (activeJobId) {
+        const res = await fetch(`/api/job/${activeJobId}/confirm`, { method: "POST" });
+        const d = await res.json();
+        logTerminal(`[Confirmation] ${d.message || "Confirmed! Starting Phase 4 Master Compositing..."}`);
+      }
+      const banner = document.getElementById("storyboard-action-banner");
+      if (banner) banner.style.display = "none";
+      const badge = document.getElementById("badge-storyboard-ready");
+      if (badge) badge.style.display = "none";
+    } catch (e) {
+      logTerminal(`[Confirmation Error] ${e.message}`);
+    } finally {
+      btnConfirm.disabled = false;
+      btnConfirm.textContent = "🚀 Confirm Script & Proceed to Final Render";
+    }
+  });
+}
+
 // Pipeline Launch Handler
 function initLaunchButton() {
   const btnLaunch = document.getElementById("btn-launch-pipeline");
@@ -173,6 +207,9 @@ function initLaunchButton() {
 
     try {
       let resp;
+      const trimSilence = document.getElementById("toggle-trim-silence") ? document.getElementById("toggle-trim-silence").checked : true;
+      const confirmBefore = document.getElementById("toggle-confirm-storyboard") ? document.getElementById("toggle-confirm-storyboard").checked : true;
+
       if (currentMode === "file") {
         if (!selectedFile) {
           alert("Please select a video file or enter a media URL first.");
@@ -180,12 +217,12 @@ function initLaunchButton() {
           btnLaunch.innerHTML = "<span>🚀 Initiate AI Production Pipeline</span>";
           return;
         }
-        const trimSilence = document.getElementById("toggle-trim-silence") ? document.getElementById("toggle-trim-silence").checked : true;
         logTerminal(`[Upload] Uploading source footage (${(selectedFile.size/(1024*1024)).toFixed(1)} MB)...`);
         const formData = new FormData();
         formData.append("file", selectedFile);
         formData.append("project_name", projectName);
         formData.append("trim_silence", trimSilence ? "true" : "false");
+        formData.append("confirm_before_render", confirmBefore ? "true" : "false");
         resp = await fetch("/api/upload", { method: "POST", body: formData });
       } else {
         const url = urlInput.value.trim();
@@ -195,12 +232,16 @@ function initLaunchButton() {
           btnLaunch.innerHTML = "<span>🚀 Initiate AI Production Pipeline</span>";
           return;
         }
-        const trimSilence = document.getElementById("toggle-trim-silence") ? document.getElementById("toggle-trim-silence").checked : true;
         logTerminal(`[Ingest] Fetching media stream from: ${url}...`);
         resp = await fetch("/api/process-url", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ url, project_name: projectName, trim_silence: trimSilence })
+          body: JSON.stringify({
+            url,
+            project_name: projectName,
+            trim_silence: trimSilence,
+            confirm_before_render: confirmBefore
+          })
         });
       }
 
@@ -234,7 +275,19 @@ function startJobPolling(jobId) {
 
       updatePipelineUI(job);
 
-      if (job.status === "completed") {
+      if (job.status === "awaiting_confirmation") {
+        // Show storyboard review gate
+        const banner = document.getElementById("storyboard-action-banner");
+        const badge = document.getElementById("badge-storyboard-ready");
+        if (banner) banner.style.display = "flex";
+        if (badge) badge.style.display = "inline-block";
+
+        // Auto switch to Storyboard tab
+        const tabStoryboard = document.getElementById("tab-view-storyboard");
+        if (tabStoryboard && !tabStoryboard.classList.contains("active")) {
+          tabStoryboard.click();
+        }
+      } else if (job.status === "completed") {
         clearInterval(pollTimer);
         stopElapsedTimer();
         onJobCompleted(job);
@@ -269,8 +322,8 @@ function updatePipelineUI(job) {
     const el = document.getElementById(`step-${i}`);
     if (i < currentPhase) {
       el.className = "step-item completed";
-    } else if (i === currentPhase && job.status === "running") {
-      el.className = "step-item active";
+    } else if (i === currentPhase) {
+      el.className = job.status === "awaiting_confirmation" ? "step-item active" : "step-item active";
     } else {
       el.className = "step-item";
     }
@@ -286,6 +339,11 @@ function onJobCompleted(job) {
   for (let i = 0; i <= 4; i++) {
     document.getElementById(`step-${i}`).className = "step-item completed";
   }
+
+  const banner = document.getElementById("storyboard-action-banner");
+  const badge = document.getElementById("badge-storyboard-ready");
+  if (banner) banner.style.display = "none";
+  if (badge) badge.style.display = "none";
 
   loadProjectsList();
   loadProject(currentProject);
@@ -405,10 +463,87 @@ async function loadProject(projectName) {
       document.getElementById("del-score-text").textContent = `Quality Score: ${data.score}/10`;
     }
 
+    // 5. Pre-load storyboard data
+    loadStoryboard(projectName);
+
     logTerminal(`[Loaded Deliverables] Project '${projectName}' loaded into studio.`);
 
   } catch (e) {
     console.error("Error loading project", e);
+  }
+}
+
+// Load Director Script & Storyboard
+async function loadStoryboard(projectName) {
+  try {
+    const res = await fetch(`/api/project/${projectName}/storyboard`);
+    if (!res.ok) return;
+    const data = await res.json();
+
+    document.getElementById("sb-meta-scenes").textContent = data.total_scenes || (data.scenes || []).length;
+    document.getElementById("sb-meta-duration").textContent = `${data.total_duration_sec || 0}s`;
+    document.getElementById("sb-meta-brolls").textContent = data.broll_count || 0;
+    document.getElementById("sb-meta-graphics").textContent = data.graphics_count || 0;
+
+    const feed = document.getElementById("storyboard-scene-list");
+    feed.innerHTML = "";
+
+    if (!data.scenes || data.scenes.length === 0) {
+      feed.innerHTML = `<div style="text-align: center; padding: 40px; color: var(--text-muted);">No scenes in storyboard yet.</div>`;
+      return;
+    }
+
+    data.scenes.forEach(scene => {
+      const card = document.createElement("div");
+      card.className = "storyboard-scene-card";
+
+      const vis = scene.visual || {};
+      let visualHtml = "";
+      if (vis.type === "motion_graphic") {
+        visualHtml = `
+          <div class="visual-badge motion-graphic">${vis.badge || "🎨 Motion Graphic"}</div>
+          ${vis.thumbnail_url ? `<div class="visual-thumb-wrapper"><img src="${vis.thumbnail_url}" alt="Card Preview" loading="lazy"></div>` : ""}
+          <div class="visual-desc"><strong>${vis.label}</strong><br>${vis.description}</div>
+        `;
+      } else if (vis.type === "broll_cutaway") {
+        visualHtml = `
+          <div class="visual-badge broll-cutaway">${vis.badge || "🎥 B-Roll Cutaway"}</div>
+          <div class="visual-thumb-wrapper" style="background: linear-gradient(135deg, #09203F, #537895); color: #fff; font-size: 11px; text-align: center; padding: 8px;">
+            🎬 4K B-Roll Clip<br><span style="color:#A5F3FC; font-size:10px;">${vis.asset_file || "stock_cutaway.mp4"}</span>
+          </div>
+          <div class="visual-desc"><strong>${vis.label}</strong><br>${vis.description}</div>
+        `;
+      } else {
+        visualHtml = `
+          <div class="visual-badge host-camera">${vis.badge || "👤 Host Camera"}</div>
+          <div class="visual-thumb-wrapper" style="background: linear-gradient(135deg, #111827, #1F2937); color: #9CA3AF; font-size: 11px; text-align: center; padding: 8px;">
+            👤 Centered Framing<br><span style="color:#10B981; font-size:10px;">Blurred Ambient (gblur=28)</span>
+          </div>
+          <div class="visual-desc">${vis.description}</div>
+        `;
+      }
+
+      card.innerHTML = `
+        <div class="scene-time-col">
+          <span class="scene-badge-num">Scene ${String(scene.scene_number).padStart(2, '0')}</span>
+          <span class="scene-timecode">${scene.timecode}</span>
+          <span class="scene-pacing-tag">${scene.pacing || "Dialogue"}</span>
+        </div>
+        <div class="scene-script-col">
+          <div class="scene-speaker">${scene.speaker || "Speaker"}</div>
+          <div class="scene-dialogue">"${scene.dialogue}"</div>
+          <div class="scene-director-note">📌 Director Note: ${scene.director_note || "Standard lower-third captions."}</div>
+        </div>
+        <div class="scene-visual-col">
+          ${visualHtml}
+        </div>
+      `;
+
+      feed.appendChild(card);
+    });
+
+  } catch (e) {
+    console.error("Failed to load storyboard", e);
   }
 }
 

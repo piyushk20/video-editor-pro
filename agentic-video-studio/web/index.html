@@ -33,6 +33,9 @@
       <button id="btn-header-explorer" class="btn-icon" title="Open Output Folder in File Explorer">
         📁 Open Output Folder
       </button>
+      <a href="/graphify-out/graph.html" target="_blank" class="btn-icon" title="Interactive Codebase Knowledge Graph">
+        🕸️ Knowledge Graph
+      </a>
       <a href="https://github.com/piyushk20/video-editor-pro" target="_blank" class="btn-icon">
         GitHub
       </a>
@@ -137,6 +140,17 @@
 
           <div class="setting-row">
             <div class="setting-info">
+              <h5>✋ Confirm Script Before Render</h5>
+              <p>Review timecodes & visual snippets before final render</p>
+            </div>
+            <label style="position: relative; display: inline-block; width: 40px; height: 22px;">
+              <input type="checkbox" id="toggle-confirm-storyboard" checked style="opacity: 0; width: 0; height: 0;">
+              <span style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--emerald); border-radius: 22px; transition: .4s;"></span>
+            </label>
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-info">
               <h5>Broadcast Audio Normalization</h5>
               <p>Calibrated speech loudness to -14 LUFS</p>
             </div>
@@ -225,6 +239,9 @@
           <button class="view-tab active" id="tab-view-9x16">📱 9:16 Vertical Master</button>
           <button class="view-tab" id="tab-view-16x9">🖥️ 16:9 Widescreen Companion</button>
           <button class="view-tab" id="tab-view-shorts">⚡ Highlight Shorts (<span id="shorts-count">0</span>)</button>
+          <button class="view-tab" id="tab-view-storyboard">
+            📜 Director Script & Storyboard <span class="badge" id="badge-storyboard-ready" style="display:none; margin-left:6px; font-size:10px; padding:2px 8px; background:var(--amber); color:#000; font-weight:800; border-radius:12px;">ACTION REQUIRED</span>
+          </button>
         </div>
 
         <!-- View 1: 9:16 Vertical Player Simulator -->
@@ -248,6 +265,51 @@
         <div id="view-container-shorts" style="display: none;">
           <div class="shorts-row" id="shorts-gallery">
             <!-- Dynamically populated -->
+          </div>
+        </div>
+
+        <!-- View 4: Director Script & Storyboard View -->
+        <div id="view-container-storyboard" style="display: none;">
+          <!-- Pre-Render Approval Gate Banner -->
+          <div id="storyboard-action-banner" style="display: none; background: linear-gradient(135deg, rgba(245, 166, 35, 0.22), rgba(255, 69, 58, 0.15)); border: 1px solid rgba(245, 166, 35, 0.5); border-radius: 14px; padding: 18px 24px; margin-bottom: 22px; align-items: center; justify-content: space-between; gap: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+            <div>
+              <h4 style="margin: 0 0 6px 0; font-size: 15px; color: #ffc83b; font-weight: 700;">✋ Review Gate: Script & Visuals Ready For Approval</h4>
+              <p style="margin: 0; font-size: 12px; color: var(--text-dim); line-height: 1.5;">Review the timecoded speech, pacing tags, and visual B-roll & motion card snippets below. Click confirm once satisfied to execute final master assembly.</p>
+            </div>
+            <button id="btn-confirm-render" class="btn-primary" style="white-space: nowrap; padding: 12px 24px; font-size: 13px; background: linear-gradient(135deg, #10B981, #059669); border: none; font-weight: 700; cursor: pointer; border-radius: 10px; box-shadow: 0 4px 16px rgba(16,185,129,0.35);">
+              🚀 Confirm Script & Proceed to Final Render
+            </button>
+          </div>
+
+          <!-- Storyboard Meta Summary -->
+          <div class="storyboard-meta-bar" id="storyboard-meta-bar">
+            <div class="sb-meta-card">
+              <span class="sb-meta-label">Total Scenes</span>
+              <strong id="sb-meta-scenes" class="sb-meta-val">0</strong>
+            </div>
+            <div class="sb-meta-card">
+              <span class="sb-meta-label">Timeline Duration</span>
+              <strong id="sb-meta-duration" class="sb-meta-val">0.0s</strong>
+            </div>
+            <div class="sb-meta-card">
+              <span class="sb-meta-label">B-Roll Cutaways</span>
+              <strong id="sb-meta-brolls" class="sb-meta-val">0</strong>
+            </div>
+            <div class="sb-meta-card">
+              <span class="sb-meta-label">Motion Graphics</span>
+              <strong id="sb-meta-graphics" class="sb-meta-val">0</strong>
+            </div>
+            <div class="sb-meta-card">
+              <span class="sb-meta-label">Review Status</span>
+              <span class="badge" id="sb-meta-status" style="color:var(--emerald); border-color:rgba(16,185,129,0.3);">Ready</span>
+            </div>
+          </div>
+
+          <!-- Scene Feed -->
+          <div class="storyboard-feed" id="storyboard-scene-list">
+            <div style="text-align: center; padding: 40px; color: var(--text-muted);">
+              Select a project or upload footage to view the timecoded script & visual storyboard.
+            </div>
           </div>
         </div>
 

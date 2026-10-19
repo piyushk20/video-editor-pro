@@ -180,17 +180,42 @@ def analyse_content(transcript: dict, project_name: str) -> dict:
             if wpm > 150 and seg_dur >= 5:  # fast speech = energetic
                 highlights.append({"start": seg["start"], "end": seg["end"], "text": seg["text"][:100], "wpm": round(wpm)})
 
-    # B-roll opportunity map: noun-heavy segments
+    # B-roll opportunity map: comprehensive visual triggers across tech, lifestyle, finance, behavior
+    visual_triggers = [
+        "office", "computer", "city", "nature", "team", "product", "graph", "data",
+        "phone", "meeting", "presentation", "screen", "technology", "ai", "startup",
+        "money", "growth", "chart", "interview", "stage", "audience", "algorithm",
+        "social", "media", "scroll", "feed", "mobile", "app", "digital", "network",
+        "wealth", "rich", "poor", "budget", "finance", "invest", "crypto", "bank",
+        "card", "debt", "luxury", "success", "lifestyle", "house", "car", "travel",
+        "work", "stress", "anxiety", "focus", "habit", "routine", "mind", "brain",
+        "think", "people", "friend", "family", "crowd", "street", "coffee", "laptop",
+        "time", "clock", "future", "world", "book", "writing", "read", "camera"
+    ]
     broll_moments = []
     for seg in segments:
         text = seg["text"].lower()
-        # Simple keyword-based: segments with specific, visual nouns
-        visual_triggers = ["office", "computer", "city", "nature", "team", "product", "graph", "data",
-                           "phone", "meeting", "presentation", "screen", "technology", "ai", "startup",
-                           "money", "growth", "chart", "interview", "stage", "audience"]
         matched = [kw for kw in visual_triggers if kw in text]
         if matched:
             broll_moments.append({"start": seg["start"], "end": seg["end"], "text": seg["text"][:100], "keywords": matched})
+
+    # If few broll opportunities detected (e.g. abstract discourse), generate rhythmic slots
+    if len(broll_moments) < 4 and duration > 15:
+        target_slots = max(3, min(8, int(duration // 20)))
+        step = duration / (target_slots + 1)
+        for idx in range(1, target_slots + 1):
+            slot_t = round(idx * step, 2)
+            # Find closest segment
+            closest_seg = min(segments, key=lambda s: abs(s["start"] - slot_t)) if segments else None
+            seg_text = closest_seg["text"] if closest_seg else project_name
+            broll_moments.append({
+                "start": slot_t,
+                "end": min(duration, slot_t + 4.5),
+                "text": seg_text[:100],
+                "keywords": [project_name.replace("_", " "), "cinematic", "lifestyle"]
+            })
+        # Sort by start time
+        broll_moments.sort(key=lambda x: x["start"])
 
     analysis = {
         "project": project_name,
