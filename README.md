@@ -17,6 +17,19 @@ An intelligent, autonomous agentic video & podcast production studio built to tr
 
 ---
 
+## 🎬 Complete Final Output Theater & Dual Master Showcase
+
+The autonomous studio includes a dedicated, unified post-processing review theater that automatically activates upon pipeline completion:
+
+![Complete Final Output Theater](docs/screenshots/complete_final_output_theater.png)
+
+- **Dual Split Master Theater**: Inspect both the 9:16 mobile-first vertical master (`1080×1920`) and 16:9 widescreen companion (`1920×1080`) side-by-side.
+- **Synchronized Dual Playback**: Lock timeline playheads to preview composition and framing differences concurrently (`▶️ Play Both Masters in Sync`).
+- **Highlight Shorts Shelf**: Instant hover previews and one-click downloads for all generated viral cutdowns.
+- **Dedicated Deliverables Matrix**: Direct download links for video masters, word-level SRT subtitles, JSON director edit plans, markdown scripts, and quality audit reports.
+
+---
+
 ## 🏗️ Architecture & Pipeline
 
 The autonomous production workflow is organized into modular phases:
