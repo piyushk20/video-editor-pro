@@ -272,8 +272,10 @@ def get_project_details(project_name: str):
         "video_9x16_size_mb": round(v9x16.stat().st_size / (1024 * 1024), 2) if v9x16 and v9x16.exists() else None,
         "video_16x9": v16x9.name if v16x9 else None,
         "video_16x9_size_mb": round(v16x9.stat().st_size / (1024 * 1024), 2) if v16x9 and v16x9.exists() else None,
-        "srt_file": "transcript.srt" if (proj_dir / "transcript.srt").exists() else None,
+        "srt_file": "transcript.srt" if (proj_dir / "transcript.srt").exists() else ("subtitles.srt" if (proj_dir / "subtitles.srt").exists() else None),
         "plan_file": "edit_plan.json" if (proj_dir / "edit_plan.json").exists() else None,
+        "script_file": "DIRECTOR_SCRIPT.md" if (proj_dir / "DIRECTOR_SCRIPT.md").exists() else None,
+        "storyboard_file": "storyboard.json" if (proj_dir / "storyboard.json").exists() else None,
         "report_file": "DELIVERY_REPORT.md" if (proj_dir / "DELIVERY_REPORT.md").exists() else None,
         "score": score,
         "shorts": shorts
