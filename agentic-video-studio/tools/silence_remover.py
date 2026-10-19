@@ -157,8 +157,8 @@ def remove_silences(
 
     # Save summary report in same directory
     summary_path = output_file.parent / "silence_report.json"
-    with open(summary_path, "w") as f:
-        json.dump(result, f, indent=2)
+    with open(summary_path, "w", encoding="utf-8") as f:
+        json.dump(result, f, indent=2, ensure_ascii=False)
 
     return result
 

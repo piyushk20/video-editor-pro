@@ -14,6 +14,13 @@ import shutil
 import asyncio
 import threading
 import subprocess
+
+if sys.platform == "win32":
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")
+        sys.stderr.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
 from pathlib import Path
 from typing import Dict, Any, List
 
@@ -73,7 +80,13 @@ def run_pipeline_thread(job_id: str, input_path: str, project_name: str, trim_si
     job["status"] = "running"
     
     def log(msg: str):
-        print(f"[{job_id}] {msg}")
+        try:
+            print(f"[{job_id}] {msg}")
+        except UnicodeEncodeError:
+            try:
+                print(f"[{job_id}] {msg.encode('ascii', 'replace').decode('ascii')}")
+            except Exception:
+                pass
         job["logs"].append(msg)
         job["current_activity"] = msg
 
@@ -152,13 +165,13 @@ def run_pipeline_thread(job_id: str, input_path: str, project_name: str, trim_si
             job["status"] = "awaiting_confirmation"
             event = threading.Event()
             job["confirm_event"] = event
-            log("⚡ Script & Visual Storyboard ready! Please review the Storyboard tab. Click 'Confirm Script & Proceed to Final Render' when ready.")
+            log("[STORYBOARD] Script & Visual Storyboard ready! Please review the Storyboard tab. Click 'Confirm Script & Proceed to Final Render' when ready.")
             confirmed = event.wait(timeout=1800)
             if not confirmed:
                 log("Confirmation timed out after 30 mins. Halting before Phase 4.")
                 return
             job["status"] = "running"
-            log("✅ Storyboard confirmed by user! Launching Phase 4 master compositing...")
+            log("[CONFIRMED] Storyboard confirmed by user! Launching Phase 4 master compositing...")
 
         # Phase 4: Master Assembly
         job["phase"] = 4

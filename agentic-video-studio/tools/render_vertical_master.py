@@ -100,7 +100,7 @@ def render_master(project_name: str):
     manifest_file = STUDIO_ROOT / "inputs" / project_name / "manifest.json"
     if manifest_file.exists():
         try:
-            with open(manifest_file) as f:
+            with open(manifest_file, encoding="utf-8") as f:
                 mf = json.load(f)
                 cand = mf.get("path") or mf.get("original_raw_path")
                 if cand and Path(cand).exists():
@@ -368,8 +368,8 @@ def render_master(project_name: str):
             "dedicated_folder": True
         }
     }
-    with open(dest_render / "review_score.json", "w") as f:
-        json.dump(review_score, f, indent=2)
+    with open(dest_render / "review_score.json", "w", encoding="utf-8") as f:
+        json.dump(review_score, f, indent=2, ensure_ascii=False)
 
     # Copy motion cards
     gfx_dest = dest_render / "graphics"

@@ -128,8 +128,8 @@ def main():
     # Save manifest
     manifest_path = INPUTS_DIR / project_name / "manifest.json"
     result["timestamp"] = datetime.now().isoformat()
-    with open(manifest_path, "w") as f:
-        json.dump(result, f, indent=2)
+    with open(manifest_path, "w", encoding="utf-8") as f:
+        json.dump(result, f, indent=2, ensure_ascii=False)
     print(f"[OK] Manifest saved: {manifest_path}")
     print(f"\n[DONE] Phase 0 complete. Project '{project_name}' ready for Phase 1 analysis.\n")
     return result
