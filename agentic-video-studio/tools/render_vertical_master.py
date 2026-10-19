@@ -141,49 +141,76 @@ def render_master(project_name: str):
     print(f"  Motion Cards : {len(graphics_cards)}")
     print(f"  B-Roll Clips : {len(broll_clips)}")
 
-    # 4. Read or generate Edit Plan timings
+    # 4. Read Script-Aligned Motion Graphics and B-Roll Schedules
+    gfx_manifest_file = STUDIO_ROOT / "graphics" / project_name / "graphics_manifest.json"
+    gfx_manifest = {}
+    if gfx_manifest_file.exists():
+        try:
+            with open(gfx_manifest_file, encoding="utf-8") as f:
+                gfx_manifest = json.load(f)
+        except Exception:
+            pass
+
+    gfx_schedule = []
+    for gcard in graphics_cards:
+        c_name = gcard.name
+        if c_name in gfx_manifest:
+            st = float(gfx_manifest[c_name].get("at_time", 0.5))
+            dur = float(gfx_manifest[c_name].get("duration", 4.2))
+        else:
+            st = 0.5
+            dur = 4.2
+        if st + dur > duration:
+            st = max(0.5, duration - dur - 0.5)
+        gfx_schedule.append({"file": gcard, "start": round(st, 2), "dur": round(dur, 2)})
+
+    # 4.2 Read B-Roll Manifest / Edit Plan
+    broll_manifest_file = STUDIO_ROOT / "assets" / "broll" / project_name / "broll_manifest.json"
+    broll_manifest = []
+    if broll_manifest_file.exists():
+        try:
+            with open(broll_manifest_file, encoding="utf-8") as f:
+                broll_manifest = json.load(f)
+        except Exception:
+            pass
+
     broll_cues = []
     edit_plan_file = STUDIO_ROOT / "edit_plans" / f"{project_name}_edit_plan.json"
     if edit_plan_file.exists():
         try:
-            with open(edit_plan_file) as f:
+            with open(edit_plan_file, encoding="utf-8") as f:
                 ep = json.load(f)
                 broll_cues = ep.get("broll_plan", [])
         except Exception:
             pass
 
-    # Schedule B-rolls
     broll_schedule = []
-    if broll_cues and len(broll_cues) >= len(broll_clips):
+    if broll_manifest:
+        for entry in broll_manifest:
+            c_path = entry.get("clip", {}).get("local_path") or entry.get("local_file")
+            if c_path and Path(c_path).exists():
+                st = float(entry.get("at_time", 0.0))
+                dur = float(entry.get("duration", 4.0))
+                if st + dur > duration:
+                    st = max(1.0, duration - dur - 1.0)
+                broll_schedule.append({"file": Path(c_path), "start": round(st, 2), "dur": round(dur, 2)})
+
+    # Fallback pairing if manifest missing or fewer clips
+    if not broll_schedule and broll_clips:
         for i, clip in enumerate(broll_clips):
-            cue = broll_cues[i]
-            st = cue.get("at_time", i * 15.0 + 8.0)
-            dur = max(3.5, min(cue.get("duration", 4.5), 5.5))
+            cue = broll_cues[i] if i < len(broll_cues) else {"at_time": i * 18.0 + 12.0, "duration": 4.0}
+            st = float(cue.get("at_time", i * 18.0 + 12.0))
+            dur = max(3.0, min(float(cue.get("duration", 4.0)), 5.0))
             if st + dur > duration:
                 st = max(1.0, duration - dur - 1.0)
             broll_schedule.append({"file": clip, "start": round(st, 2), "dur": round(dur, 2)})
-    else:
-        # Distribute B-rolls evenly
-        num_b = len(broll_clips)
-        if num_b > 0:
-            step = duration / (num_b + 1)
-            for i, clip in enumerate(broll_clips):
-                st = round(step * (i + 1) - 1.5, 2)
-                dur = min(4.5, duration - st - 0.5) if st + 4.5 > duration else 4.5
-                if st > 0 and dur >= 2.5:
-                    broll_schedule.append({"file": clip, "start": st, "dur": dur})
 
-    # Schedule Graphics (Upper third: y: 120-620)
-    gfx_schedule = []
-    g_count = len(graphics_cards)
-    if g_count > 0:
-        g_step = duration / (g_count + 0.5)
-        for i, gcard in enumerate(graphics_cards):
-            st = round(0.5 if i == 0 else g_step * i, 2)
-            dur = 4.2
-            if st + dur > duration:
-                st = max(0.5, duration - dur - 0.5)
-            gfx_schedule.append({"file": gcard, "start": st, "dur": dur})
+    print(f"  [Schedule] Motion Cards scheduled : {len(gfx_schedule)}")
+    for g in gfx_schedule:
+        print(f"    - {g['file'].name} @ {g['start']}s ({g['dur']}s)")
+    print(f"  [Schedule] B-Roll Cutaways scheduled: {len(broll_schedule)}")
+    for b in broll_schedule:
+        print(f"    - {b['file'].name} @ {b['start']}s ({b['dur']}s)")
 
     # 5. Build FFmpeg Filter Graph for 9:16 Vertical Master
     out_9x16 = dest_render / "full_episode_9x16_vertical.mp4"

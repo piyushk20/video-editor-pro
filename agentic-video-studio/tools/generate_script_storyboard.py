@@ -61,9 +61,28 @@ def generate_storyboard(project_name: str) -> dict:
     segments = transcript.get("segments", [])
     
     # Motion Graphics & B-Rolls
-    gfx_cards = sorted([p.name for p in gfx_dir.glob("*.png")]) if gfx_dir.exists() else []
+    gfx_cards = sorted([p.name for p in gfx_dir.glob("*.png") if p.name != "graphics_manifest.json"]) if gfx_dir.exists() else []
     broll_clips = sorted([p.name for p in broll_dir.glob("*.mp4") if p.stat().st_size > 100000]) if broll_dir.exists() else []
     broll_cues = edit_plan.get("broll_plan", [])
+
+    # Load script-aligned manifests
+    gfx_manifest = {}
+    gfx_manifest_file = gfx_dir / "graphics_manifest.json"
+    if gfx_manifest_file.exists():
+        try:
+            with open(gfx_manifest_file, encoding="utf-8") as f:
+                gfx_manifest = json.load(f)
+        except Exception:
+            pass
+
+    broll_manifest = []
+    broll_manifest_file = broll_dir / "broll_manifest.json"
+    if broll_manifest_file.exists():
+        try:
+            with open(broll_manifest_file, encoding="utf-8") as f:
+                broll_manifest = json.load(f)
+        except Exception:
+            pass
 
     # Group segments into coherent 6-18 second scenes
     scenes = []
@@ -89,65 +108,70 @@ def generate_storyboard(project_name: str) -> dict:
             st_time = round(curr_start, 2)
             en_time = round(curr_end, 2)
 
-            # Determine Visual Snippet
-            visual = {
-                "type": "host_camera",
-                "label": "Host Camera (9:16 Centered)",
-                "description": "Centered speaker framing with ambient blurred background (gblur=28)",
-                "badge": "👤 Host Center",
-                "thumbnail_url": None,
-                "asset_file": None
-            }
-
-            # Check if Motion Graphic card triggers in this time window
+            # 1. Match Motion Card if its trigger timestamp falls inside this scene
             matched_card = None
-            if gfx_cards:
-                # Distribute cards across early/mid/outro scenes
-                card_idx = int((st_time / duration) * len(gfx_cards))
-                card_idx = min(card_idx, len(gfx_cards) - 1)
-                # First scene gets intro title
-                if scene_idx == 1:
-                    matched_card = gfx_cards[0]
-                elif scene_idx == len(segments):
-                    matched_card = gfx_cards[-1]
-                elif card_idx < len(gfx_cards) and (scene_idx % 2 == 1):
-                    matched_card = gfx_cards[card_idx]
+            card_info = None
+            if gfx_manifest:
+                for c_file, c_data in gfx_manifest.items():
+                    c_t = float(c_data.get("at_time", -10))
+                    if (st_time <= c_t <= en_time) or (abs(c_t - st_time) < 2.5 and scene_idx == 1):
+                        matched_card = c_file
+                        card_info = c_data
+                        break
 
-            # Check if B-Roll triggers
+            # 2. Match B-Roll if its trigger timestamp falls inside this scene
             matched_broll = None
-            for bc in broll_cues:
-                if abs(bc.get("at_time", -10) - st_time) < 4.0:
-                    matched_broll = bc
-                    break
+            b_clip_name = None
+            if broll_manifest:
+                for b_entry in broll_manifest:
+                    b_t = float(b_entry.get("at_time", -10))
+                    if (st_time <= b_t <= en_time) or (abs(b_t - st_time) < 2.0):
+                        matched_broll = b_entry
+                        loc_f = b_entry.get("clip", {}).get("local_path") or b_entry.get("local_file")
+                        if loc_f:
+                            b_clip_name = Path(loc_f).name
+                        break
+            elif broll_cues:
+                for bc in broll_cues:
+                    bc_t = float(bc.get("at_time", -10))
+                    if (st_time <= bc_t <= en_time) or (abs(bc_t - st_time) < 2.0):
+                        matched_broll = bc
+                        if broll_clips:
+                            b_clip_name = broll_clips[min(scene_idx % len(broll_clips), len(broll_clips) - 1)]
+                        break
 
+            # Determine Visual Snippet according to exact script triggers
             if matched_card:
+                c_label = card_info.get("type", "motion_card").replace("_", " ").title() if card_info else "Motion Card"
                 visual = {
                     "type": "motion_graphic",
-                    "label": f"Motion Card: {matched_card}",
-                    "description": "Bold high-contrast card in upper safe zone (never on face)",
+                    "label": f"Motion Card: {c_label}",
+                    "description": f"Bold safe-zone card triggered on spoken cue ({card_info.get('spoken_context', '')[:40]}...)" if card_info else "Bold safe-zone card in upper safe zone",
                     "badge": "🎨 Motion Graphic",
                     "thumbnail_url": f"/graphics/{project_name}/{matched_card}",
-                    "asset_file": matched_card
+                    "asset_file": matched_card,
+                    "trigger_at": card_info.get("at_time") if card_info else st_time
                 }
-            elif matched_broll and broll_clips:
-                b_clip_name = broll_clips[min(scene_idx % len(broll_clips), len(broll_clips) - 1)]
+            elif matched_broll:
+                kw = matched_broll.get("keyword", "Cutaway")
                 visual = {
                     "type": "broll_cutaway",
-                    "label": f"4K B-Roll: {matched_broll.get('search_query', 'Cinematic Cutaway')}",
-                    "description": f"Ken Burns pan & smooth alpha crossfade ({matched_broll.get('context', '')[:40]})",
-                    "badge": "🎥 B-Roll Cutaway",
+                    "label": f"4K B-Roll: {kw.title()}",
+                    "description": f"Cutaway on spoken cue (\"{matched_broll.get('spoken_context', '')[:40]}...\")",
+                    "badge": f"🎥 B-Roll ({kw})",
                     "thumbnail_url": None,
-                    "asset_file": b_clip_name
+                    "asset_file": b_clip_name or (broll_clips[0] if broll_clips else None),
+                    "trigger_at": matched_broll.get("at_time")
                 }
-            elif scene_idx % 3 == 0 and broll_clips:
-                b_clip_name = broll_clips[(scene_idx // 3) % len(broll_clips)]
+            else:
                 visual = {
-                    "type": "broll_cutaway",
-                    "label": "Cinematic B-Roll Cutaway",
-                    "description": "Dynamic context-matched visual cutaway with smooth crossfade",
-                    "badge": "🎥 B-Roll Cutaway",
+                    "type": "host_camera",
+                    "label": "Host Camera (9:16 Centered)",
+                    "description": "Centered speaker framing with ambient blurred background (gblur=28)",
+                    "badge": "👤 Host Center",
                     "thumbnail_url": None,
-                    "asset_file": b_clip_name
+                    "asset_file": None,
+                    "trigger_at": None
                 }
 
             # Pacing / Delivery Tone

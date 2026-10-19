@@ -4,7 +4,7 @@ PHASE 3 ? Intelligent Enrichment: B-Roll Sourcing
 Downloads context-matched free B-roll from Pexels, Pixabay, Mixkit.
 Logs all sources in assets/broll_sources.md.
 """
-import os, sys, json, requests, argparse, re
+import os, sys, json, requests, argparse, re, shutil
 from pathlib import Path
 from datetime import datetime
 from urllib.parse import quote
@@ -223,14 +223,21 @@ def source_broll(edit_plan: dict, project_name: str) -> list[dict]:
 
     # Save sources log
     log_path = STUDIO_ROOT / "assets" / "broll_sources.md"
-    with open(log_path, "w") as f:
-        f.write(f"# B-Roll Sources Log ? {project_name}\n\n")
+    with open(log_path, "w", encoding="utf-8") as f:
+        f.write(f"# B-Roll Sources Log — {project_name}\n\n")
         f.write(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M')}\n\n")
         f.write("| Slot | Time | Query | Source | License | Page URL | Local File |\n")
         f.write("|------|------|-------|--------|---------|----------|------------|\n")
         for s in sources_log:
             f.write(f"| {s['slot']} | {s['at_time']:.1f}s | {s['query']} | {s['source']} | {s['license']} | {s['page_url']} | {Path(s['local_file']).name if s.get('local_file') else 'N/A'} |\n")
     print(f"\n[OK] B-roll sources log: {log_path}")
+
+    # Save structured broll_manifest.json for master render engine & storyboard
+    manifest_file = project_broll_dir / "broll_manifest.json"
+    with open(manifest_file, "w", encoding="utf-8") as f:
+        json.dump(sourced, f, indent=2, ensure_ascii=False)
+    print(f"[OK] B-roll manifest saved: {manifest_file}")
+
     return sourced
 
 def main():

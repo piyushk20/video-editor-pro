@@ -3,9 +3,11 @@
 Universal Dynamic Motion Graphics Generator for Agentic Video Studio.
 Generates large, high-visibility, professional broadcast motion graphic cards (RGBA)
 specifically anchored to the safe zone (never obstructing the speaker's face).
-Accepts project_name as CLI argument and dynamically extracts title, concepts, and hooks.
+Accepts project_name as CLI argument and dynamically extracts title, concepts, and
+exact script quotes from the EditPlan and Whisper transcript.
+Outputs graphics_manifest.json detailing exact script timestamps and durations.
 """
-import os, sys, json
+import os, sys, json, re
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 
@@ -31,7 +33,7 @@ def draw_card_base(draw, x0, y0, x1, y1, radius=22, outline=(245, 166, 35, 255),
     # Solid opaque card
     draw.rounded_rectangle((x0, y0, x1, y1), radius=radius, fill=fill, outline=outline, width=3)
 
-def load_project_meta(project_name: str) -> dict:
+def load_project_meta(project_name: str) -> tuple[dict, dict]:
     meta = {
         "title": project_name.replace("_", " ").title(),
         "eyebrow": "MASTERCLASS EDIT",
@@ -48,12 +50,19 @@ def load_project_meta(project_name: str) -> dict:
         "outro_heading": "TAKE ACTION TODAY",
         "outro_sub": "Subscribe for daily deep-dive insights."
     }
+    timings = {
+        "01_intro_title.png": {"at_time": 0.5, "duration": 4.2},
+        "02_lower_third.png": {"at_time": 6.5, "duration": 4.0},
+        "03_pillars_card.png": {"at_time": 30.0, "duration": 4.8},
+        "04_insight_card.png": {"at_time": 75.0, "duration": 5.0},
+        "05_outro_card.png": {"at_time": 115.0, "duration": 5.0}
+    }
 
-    # Try manifest
+    # 1. Try manifest
     mf_path = STUDIO_ROOT / "inputs" / project_name / "manifest.json"
     if mf_path.exists():
         try:
-            with open(mf_path) as f:
+            with open(mf_path, encoding="utf-8") as f:
                 mf = json.load(f)
                 if mf.get("title"):
                     raw_t = mf["title"].replace("clip_", "").replace("_", " ")
@@ -61,53 +70,80 @@ def load_project_meta(project_name: str) -> dict:
         except Exception:
             pass
 
-    # Try edit plan
+    # 2. Try edit plan
     ep_path = STUDIO_ROOT / "edit_plans" / f"{project_name}_edit_plan.json"
     if ep_path.exists():
         try:
-            with open(ep_path) as f:
+            with open(ep_path, encoding="utf-8") as f:
                 ep = json.load(f)
                 if ep.get("title"):
                     meta["title"] = ep["title"]
                 if ep.get("creative_brief"):
                     meta["subtitle"] = ep["creative_brief"]
+                
+                # Extract script-aligned motion graphics
+                for mg in ep.get("motion_graphics", []):
+                    c_file = mg.get("card_file")
+                    if c_file:
+                        timings[c_file] = {
+                            "at_time": mg.get("at_time", 0.0),
+                            "duration": mg.get("duration", 4.5),
+                            "type": mg.get("type", ""),
+                            "spoken_context": mg.get("spoken_context", "")
+                        }
+                    if mg.get("type") == "insight_card" and mg.get("quote"):
+                        meta["insight_text"] = mg["quote"]
         except Exception:
             pass
 
-    # Customize for known topics if detected in project name
+    # Customize presets if detected in project name
     p_lower = project_name.lower()
     if "social" in p_lower or "algo" in p_lower:
         meta["eyebrow"] = "DIGITAL PSYCHOLOGY"
         meta["title"] = "Social Media Algorithms"
-        meta["subtitle"] = "How modern feeds distort reality and focus."
-        meta["speaker"] = "Analysis"
+        meta["subtitle"] = "How modern feeds distort reality and personal yardsticks."
+        meta["speaker"] = "Analysis & Dialogue"
         meta["role"] = "Behavioral & Tech Insights"
         meta["pillars"] = [
-            ("1", "Attention is the primary digital currency", "Awareness"),
+            ("1", "Attention is the modern comparison currency", "Awareness"),
             ("2", "Algorithms optimize for outrage and retention", "Psychology"),
             ("3", "Reclaim intentional focus and mental clarity", "Freedom")
         ]
-        meta["insight_title"] = "THE FEED PARADOX"
-        meta["insight_text"] = "You don't scroll the algorithm. The algorithm scrolls you."
+        meta["insight_title"] = "THE INTERNAL YARDSTICK"
+        meta["insight_text"] = "Look inside yourself for what matters, rather than outside for that yardstick."
     elif "debt" in p_lower or "snowball" in p_lower:
         meta["eyebrow"] = "FINANCIAL FREEDOM"
         meta["title"] = "Debt Snowball Blueprint"
         meta["subtitle"] = "Pay off debt with unstoppable momentum."
         meta["speaker"] = "Dave Ramsey"
         meta["role"] = "Personal Finance Expert"
-    elif "money" in p_lower:
+        meta["pillars"] = [
+            ("1", "Baby Step 1: Starter emergency cash buffer", "Security"),
+            ("2", "Baby Step 2: List debts smallest to largest", "Momentum"),
+            ("3", "Gazelle intensity to eliminate monthly payments", "Freedom")
+        ]
+        meta["insight_title"] = "DEBT-FREE MOMENTUM"
+        meta["insight_text"] = "Free up your payments and you free up your life."
+    elif "money" in p_lower or "chasing" in p_lower:
         meta["eyebrow"] = "WEALTH STRATEGY"
         meta["title"] = "Stop Chasing Money"
         meta["subtitle"] = "Align daily habits with true independence."
         meta["speaker"] = "Mel Robbins & Morgan Housel"
         meta["role"] = "Authors & Strategists"
+        meta["pillars"] = [
+            ("1", "Doing well with money is in your control", "Behavior"),
+            ("2", "Reject secret formulas and elite club myths", "Mindset"),
+            ("3", "Simple, repeatable habits drive long-term wealth", "Consistency")
+        ]
+        meta["insight_title"] = "THE BEHAVIOR SHIFT"
+        meta["insight_text"] = "Money success is about behavior and discipline, not secret formulas."
 
-    return meta
+    return meta, timings
 
 def generate_graphics(project_name: str):
     graphics_dir = STUDIO_ROOT / "graphics" / project_name
     graphics_dir.mkdir(parents=True, exist_ok=True)
-    meta = load_project_meta(project_name)
+    meta, timings = load_project_meta(project_name)
 
     # 1. Intro Title Card (1080x1920 canvas for 9:16 safe zone)
     img_intro = Image.new("RGBA", (1080, 1920), (0, 0, 0, 0))
@@ -168,14 +204,22 @@ def generate_graphics(project_name: str):
     # 4. Insight / Quote Card
     img_q = Image.new("RGBA", (1080, 1920), (0, 0, 0, 0))
     draw_q = ImageDraw.Draw(img_q)
-    x0, y0, x1, y1 = 60, 150, 1020, 540
+    x0, y0, x1, y1 = 60, 150, 1020, 560
     draw_card_base(draw_q, x0, y0, x1, y1, outline=(255, 149, 0, 255), fill=(12, 16, 28, 255))
     draw_q.text((x0 + 35, y0 + 24), meta["insight_title"], fill=(255, 149, 0, 255), font=get_font(30, bold=True))
-    draw_q.text((x0 + 35, y0 + 80), f"“{meta['insight_text'][:42]}", fill=(255, 255, 255, 255), font=get_font(30, bold=True))
-    if len(meta["insight_text"]) > 42:
-        draw_q.text((x0 + 35, y0 + 125), f"{meta['insight_text'][42:85]}”", fill=(255, 255, 255, 255), font=get_font(30, bold=True))
-    draw_q.line((x0 + 35, y0 + 190, x1 - 35, y0 + 190), fill=(255, 255, 255, 40), width=1)
-    draw_q.text((x0 + 35, y0 + 215), "Proven Mindset Framework", fill=(225, 235, 245, 255), font=get_font(22, bold=False))
+    
+    import textwrap
+    q_lines = textwrap.wrap(meta["insight_text"], width=38)
+    if q_lines:
+        draw_q.text((x0 + 35, y0 + 80), f"“{q_lines[0]}", fill=(255, 255, 255, 255), font=get_font(29, bold=True))
+    if len(q_lines) > 1:
+        tail = "”" if len(q_lines) == 2 else ""
+        draw_q.text((x0 + 35, y0 + 125), f"{q_lines[1]}{tail}", fill=(255, 255, 255, 255), font=get_font(29, bold=True))
+    if len(q_lines) > 2:
+        draw_q.text((x0 + 35, y0 + 168), f"{q_lines[2]}”", fill=(255, 255, 255, 255), font=get_font(29, bold=True))
+    
+    draw_q.line((x0 + 35, y0 + 225, x1 - 35, y0 + 225), fill=(255, 255, 255, 40), width=1)
+    draw_q.text((x0 + 35, y0 + 245), "Proven Mindset Framework", fill=(225, 235, 245, 255), font=get_font(22, bold=False))
     p4 = graphics_dir / "04_insight_card.png"
     img_q.save(p4)
 
@@ -191,11 +235,17 @@ def generate_graphics(project_name: str):
     p5 = graphics_dir / "05_outro_card.png"
     img_o.save(p5)
 
+    # Save graphics_manifest.json with exact script timestamps
+    manifest_path = graphics_dir / "graphics_manifest.json"
+    with open(manifest_path, "w", encoding="utf-8") as f:
+        json.dump(timings, f, indent=2, ensure_ascii=False)
+
     print(f"[OK] Generated 5 motion graphics cards in: {graphics_dir}")
+    print(f"[OK] Saved graphics_manifest.json with script-aligned timestamps.")
     return [p1, p2, p3, p4, p5]
 
 def main():
-    proj = sys.argv[1] if len(sys.argv) > 1 else "trap_of_comparison"
+    proj = sys.argv[1] if len(sys.argv) > 1 else "socialmedia_algo"
     generate_graphics(proj)
 
 if __name__ == "__main__":
