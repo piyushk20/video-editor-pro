@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 """
 PHASE 3 ? Intelligent Enrichment: B-Roll Sourcing
 Downloads context-matched free B-roll from Pexels, Pixabay, Mixkit.
@@ -13,7 +13,16 @@ STUDIO_ROOT = Path(__file__).parent.parent
 BROLL_DIR   = STUDIO_ROOT / "assets" / "broll"
 BROLL_DIR.mkdir(parents=True, exist_ok=True)
 
-# ?? API Keys (set in .env or environment) ????????????????????????????????????
+# Import Scrapling autonomous zero-API b-roll provider
+try:
+    from tools.scrapling_broll_provider import search_and_download_broll
+except ImportError:
+    try:
+        from scrapling_broll_provider import search_and_download_broll
+    except ImportError:
+        search_and_download_broll = None
+
+# Optional API Keys (set in .env or environment if desired)
 PEXELS_API_KEY  = os.getenv("PEXELS_API_KEY", "")
 PIXABAY_API_KEY = os.getenv("PIXABAY_API_KEY", "")
 
@@ -112,6 +121,7 @@ def source_broll(edit_plan: dict, project_name: str) -> list[dict]:
 
     sourced = []
     sources_log = []
+    used_clip_ids = set()
 
     for i, slot in enumerate(broll_slots):
         query = slot.get("search_query", "cinematic 4K")
@@ -123,10 +133,53 @@ def source_broll(edit_plan: dict, project_name: str) -> list[dict]:
         # Try Pexels first
         pexels_results = search_pexels(query, per_page=2)
         clips.extend(pexels_results)
-        # Fallback to Pixabay
+        # Fallback to Pixabay API
         if not clips:
             pixabay_results = search_pixabay(query, per_page=2)
             clips.extend(pixabay_results)
+
+        # Autonomous Scrapling fallback (Zero-API, Pexels portrait/landscape)
+        if not clips and search_and_download_broll:
+            print(f"  [Scrapling] Sourcing copyright-free B-roll autonomously via Scrapling...")
+            target_format = edit_plan.get("target_format", "9:16")
+            orientation = "portrait" if ("9:16" in target_format or "vertical" in target_format.lower()) else "landscape"
+            scraped = search_and_download_broll(
+                query=query,
+                dest_dir=project_broll_dir,
+                orientation=orientation,
+                limit=1,
+                prefix=label,
+                exclude_ids=used_clip_ids
+            )
+            if scraped:
+                best_scraped = scraped[0]
+                used_clip_ids.add(best_scraped.id)
+                entry = {
+                    **slot,
+                    "clip": {
+                        "source": best_scraped.source,
+                        "query": query,
+                        "id": best_scraped.id,
+                        "url": best_scraped.download_url,
+                        "resolution": best_scraped.resolution,
+                        "license": best_scraped.license,
+                        "page_url": best_scraped.page_url,
+                        "local_path": best_scraped.local_path
+                    }
+                }
+                sourced.append(entry)
+                sources_log.append({
+                    "slot": i+1,
+                    "at_time": at_time,
+                    "query": query,
+                    "source": best_scraped.source,
+                    "id": best_scraped.id,
+                    "resolution": best_scraped.resolution,
+                    "license": best_scraped.license,
+                    "page_url": best_scraped.page_url,
+                    "local_file": best_scraped.local_path
+                })
+                continue
 
         if clips:
             best = clips[0]

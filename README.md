@@ -53,8 +53,9 @@ The autonomous production workflow is organized into modular phases:
    - Formulates pacing, b-roll trigger timestamps, kinetic caption timing, and graphic placements.
    - Outputs a structured `edit_plan.json`.
 
-4. **Phase 3 — Visual Sourcing & Motion Graphics (`phase3_broll_sourcer.py`, `generate_motion_graphics.py`)**:
-   - Sources or synthesizes relevant b-roll footage.
+4. **Phase 3 — Visual Sourcing & Motion Graphics (`phase3_broll_sourcer.py`, `scrapling_broll_provider.py`, `generate_motion_graphics.py`)**:
+   - Autonomously scrapes and downloads copyright-free stock video footage (Pexels, Coverr) using **Scrapling** with anti-bot resilience and zero API keys required.
+   - Automatically matches requested orientation (9:16 vertical portrait or 16:9 landscape) and enforces visual variety across scenes.
    - Renders Ken Burns camera pan/zoom animations.
    - Creates bold RGBA motion graphic cards for upper/side safe zones.
 
@@ -84,6 +85,7 @@ video-editorpro/
         ├── phase1_analyser.py
         ├── phase2_director.py
         ├── phase3_broll_sourcer.py
+        ├── scrapling_broll_provider.py
         ├── phase4_editor.py
         ├── generate_motion_graphics.py
         ├── prepare_broll_clips.py
