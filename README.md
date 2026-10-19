@@ -2,6 +2,8 @@
 
 An intelligent, autonomous agentic video & podcast production studio built to transform any input footage, audio podcast, URL, or infographic into broadcast-ready, highly engaging videos.
 
+📖 **Full Documentation**: [Explore the Video Editor Pro Wiki](https://github.com/piyushk20/video-editor-pro/wiki)
+
 ## 🌟 Key Features
 
 - **9:16 Vertical Master First**: Engineered for modern mobile-first consumption (TikTok, Reels, YouTube Shorts, vertical feeds) with ambient blurred backgrounds and sharp center framing.
