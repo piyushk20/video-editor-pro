@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Video Editor Pro | Autonomous Video & Podcast Studio</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=11">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎬</text></svg>">
 </head>
 <body>
@@ -60,6 +60,7 @@
         <div class="tabs-control">
           <button class="tab-btn active" id="tab-file-mode">Upload Video File</button>
           <button class="tab-btn" id="tab-url-mode">Web / Podcast URL</button>
+          <button class="tab-btn" id="tab-shorts-mode" style="border-color: rgba(245, 158, 11, 0.4); color: var(--amber);">🔥 AI Shorts Generator</button>
         </div>
 
         <!-- File Upload Section -->
@@ -88,6 +89,56 @@
             <label class="input-label" for="input-url">Media Stream / Video URL</label>
             <input type="url" id="input-url" class="input-field" placeholder="https://youtube.com/watch?v=... or direct MP4/podcast audio URL">
           </div>
+        </div>
+
+        <!-- AI Shorts Generator Section (Anil Matcha Engine + Groq AI) -->
+        <div id="section-shorts-input" style="display: none;">
+          <div class="input-group">
+            <label class="input-label" for="shorts-source-url">YouTube Video or Podcast URL</label>
+            <input type="url" id="shorts-source-url" class="input-field" placeholder="https://www.youtube.com/watch?v=... or direct MP4 URL">
+          </div>
+          
+          <div style="margin: 10px 0; text-align: center; color: var(--text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">— OR DROP LOCAL FILE —</div>
+          
+          <div class="dropzone" id="shorts-dropzone" style="padding: 14px;">
+            <input type="file" id="shorts-file-input" accept="video/mp4,video/quicktime,video/webm,audio/*" style="display: none;">
+            <div class="dropzone-icon" style="font-size: 20px;">⚡</div>
+            <div class="dropzone-text">
+              <h5 id="shorts-drop-filename" style="font-size: 13px; font-weight: 700;">Drop long video to split into shorts</h5>
+              <p id="shorts-drop-subtext" style="font-size: 11px; color: var(--text-muted);">MP4, MOV, MKV up to 4K</p>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px;">
+            <div class="input-group">
+              <label class="input-label" for="shorts-count-select">Shorts to Generate</label>
+              <select id="shorts-count-select" class="input-field" style="background: rgba(15, 23, 42, 0.9);">
+                <option value="2">2 Viral Candidates</option>
+                <option value="3" selected>3 Viral Candidates</option>
+                <option value="4">4 Viral Candidates</option>
+                <option value="5">5 Viral Candidates</option>
+              </select>
+            </div>
+            <div class="input-group">
+              <label class="input-label" for="shorts-duration-select">Target Duration</label>
+              <select id="shorts-duration-select" class="input-field" style="background: rgba(15, 23, 42, 0.9);">
+                <option value="20-35">15s - 35s (Fast Hook)</option>
+                <option value="30-50" selected>30s - 50s (Standard)</option>
+                <option value="45-60">45s - 60s (Deep Story)</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="margin-top: 10px; background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: 8px; padding: 8px 12px; font-size: 11px; color: #fde68a;">
+            <strong>⚡ Anil Matcha Engine + Groq AI:</strong>
+            <p style="margin-top: 2px; color: var(--text-muted); font-size: 10.5px;">
+              Analyzes virality peaks via Groq LLM (<code>openai/gpt-oss-120b</code>), cuts 9:16 vertical candidate shorts, and imports chosen shorts directly into Video Editor Pro with Storyboard review pause.
+            </p>
+          </div>
+
+          <button id="btn-run-shorts-extract" class="btn-primary" style="width: 100%; margin-top: 12px; background: linear-gradient(135deg, #f59e0b, #d97706); border-color: #f59e0b; color: #000; font-weight: 800;">
+            🔥 Discover & Generate High-Performing Shorts
+          </button>
         </div>
 
         <!-- Project Name -->
@@ -136,6 +187,36 @@
               <input type="checkbox" id="toggle-trim-silence" checked style="opacity: 0; width: 0; height: 0;">
               <span style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--emerald); border-radius: 22px; transition: .4s;"></span>
             </label>
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-info">
+              <h5>✂️ Herk AI Mistake & Retake Cutter</h5>
+              <p>Removes stutters, false starts & duplicate takes via Jaccard similarity</p>
+            </div>
+            <label style="position: relative; display: inline-block; width: 40px; height: 22px;">
+              <input type="checkbox" id="toggle-cut-mistakes" checked style="opacity: 0; width: 0; height: 0;">
+              <span style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--emerald); border-radius: 22px; transition: .4s;"></span>
+            </label>
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-info">
+              <h5>📐 Herk House Reel Pacing & Layouts</h5>
+              <p>0.1s speech start, 1.2s cuts, split screen (y:0-880), punch-in zoom</p>
+            </div>
+            <label style="position: relative; display: inline-block; width: 40px; height: 22px;">
+              <input type="checkbox" id="toggle-house-pacing" checked style="opacity: 0; width: 0; height: 0;">
+              <span style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--emerald); border-radius: 22px; transition: .4s;"></span>
+            </label>
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-info">
+              <h5>🛡️ 0% Mouth Occlusion Guard</h5>
+              <p>First 2.5s safe-zone check & high-contrast dark box captions</p>
+            </div>
+            <span class="badge" style="color: var(--emerald); border-color: rgba(16,185,129,0.3);">Protected</span>
           </div>
 
           <div class="setting-row">
@@ -239,13 +320,22 @@
           <button class="view-tab active" id="tab-view-final">
             🎬 Complete Final Output <span class="badge" id="badge-final-ready" style="margin-left:6px; font-size:10px; padding:2px 8px; background:var(--emerald); color:#000; font-weight:800; border-radius:12px;">READY</span>
           </button>
+          <button class="view-tab" id="tab-view-ai-clips" style="border-color: rgba(245, 158, 11, 0.45); color: var(--amber); font-weight: 700;">
+            ⚡ AI Clips (<span id="ai-clips-count">0</span>)
+          </button>
+          <button class="view-tab" id="tab-view-shorts">
+            📱 Shorts & Clips (<span id="shorts-count">0</span>)
+          </button>
           <button class="view-tab" id="tab-view-9x16">📱 9:16 Vertical Master</button>
           <button class="view-tab" id="tab-view-16x9">🖥️ 16:9 Widescreen Companion</button>
-          <button class="view-tab" id="tab-view-shorts">⚡ Highlight Shorts (<span id="shorts-count">0</span>)</button>
+
           <button class="view-tab" id="tab-view-storyboard">
             📜 Director Script & Storyboard <span class="badge" id="badge-storyboard-ready" style="display:none; margin-left:6px; font-size:10px; padding:2px 8px; background:var(--amber); color:#000; font-weight:800; border-radius:12px;">ACTION REQUIRED</span>
           </button>
+          <button class="view-tab" id="tab-view-edl">✂️ Visual EDL & Mistakes (<span id="edl-cuts-count">0</span>)</button>
+          <button class="view-tab" id="tab-view-preflight">🛡️ Preflight Audit</button>
         </div>
+
 
         <!-- View 0: Complete Final Output Master Showcase -->
         <div id="view-container-final" class="final-output-theater">
@@ -378,10 +468,34 @@
           </video>
         </div>
 
-        <!-- View 3: Highlight Shorts Gallery -->
+        <!-- View 3: Highlight Shorts Gallery (with Small Tabs for AI Clips & Master Shorts) -->
         <div id="view-container-shorts" style="display: none;">
-          <div class="shorts-row" id="shorts-gallery">
-            <!-- Dynamically populated -->
+          <div class="shorts-subtabs-bar" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; border-bottom: 1px solid var(--border-subtle); padding-bottom: 12px; gap: 12px; flex-wrap: wrap;">
+            <div style="display: flex; gap: 8px;">
+              <button class="subtab-btn active" id="subtab-btn-ai-clips" type="button">
+                ⚡ AI Clip Generator Cuts (<span id="subtab-ai-count">0</span>)
+              </button>
+              <button class="subtab-btn" id="subtab-btn-project-shorts" type="button">
+                🎬 Project Master Shorts (<span id="subtab-proj-count">0</span>)
+              </button>
+            </div>
+            <button class="btn-icon" style="font-size: 11px; padding: 4px 12px; color: var(--amber);" onclick="document.getElementById('tab-view-ai-clips').click()">
+              Open Full AI Clips Shelf ↗
+            </button>
+          </div>
+
+          <!-- Subtab 1: AI Clip Generator Small Tab Shelf -->
+          <div id="subtab-content-ai-clips" style="display: block;">
+            <div class="shorts-row" id="shorts-ai-gallery" style="display: flex; gap: 14px; overflow-x: auto; padding-bottom: 12px;">
+              <!-- Dynamically populated small cards -->
+            </div>
+          </div>
+
+          <!-- Subtab 2: Project Master Shorts -->
+          <div id="subtab-content-project-shorts" style="display: none;">
+            <div class="shorts-row" id="shorts-gallery">
+              <!-- Dynamically populated project shorts -->
+            </div>
           </div>
         </div>
 
@@ -430,11 +544,238 @@
           </div>
         </div>
 
+        <!-- View 5: Visual EDL Review & Mistake Cutter (Herk Edit Kit) -->
+        <div id="view-container-edl" style="display: none;">
+          <div class="edl-header-banner" style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 20px; margin-bottom: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+              <div>
+                <h4 style="font-size: 16px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px;">
+                  <span>✂️ Edit Decision List (EDL) & Speech Cleaner</span>
+                  <span class="badge" style="color: var(--cyan); border-color: rgba(6,182,212,0.3); font-size: 11px;">Herk Edit Kit Engine</span>
+                </h4>
+                <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">
+                  Scans word timestamps for stutters, repeated false starts & retakes. Previews keep vs cut intervals with transcript retiming.
+                </p>
+              </div>
+              <a href="#" id="btn-launch-edl-standalone" target="_blank" class="btn-primary" style="text-decoration: none; padding: 9px 18px; font-size: 12px; font-weight: 600;">
+                ↗ Launch Interactive Scrubber
+              </a>
+            </div>
+
+            <!-- Stats Row -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px;">
+              <div class="sb-meta-card">
+                <span class="sb-meta-label">Original Duration</span>
+                <strong id="edl-stat-original" class="sb-meta-val">0.0s</strong>
+              </div>
+              <div class="sb-meta-card">
+                <span class="sb-meta-label">Tightened Duration</span>
+                <strong id="edl-stat-tightened" class="sb-meta-val" style="color: var(--emerald);">0.0s</strong>
+              </div>
+              <div class="sb-meta-card">
+                <span class="sb-meta-label">Total Time Saved</span>
+                <strong id="edl-stat-saved" class="sb-meta-val" style="color: var(--rose);">-0.0s</strong>
+              </div>
+              <div class="sb-meta-card">
+                <span class="sb-meta-label">Efficiency Boost</span>
+                <strong id="edl-stat-pct" class="sb-meta-val" style="color: var(--cyan);">0%</strong>
+              </div>
+              <div class="sb-meta-card">
+                <span class="sb-meta-label">Mistakes Trimmed</span>
+                <strong id="edl-stat-count" class="sb-meta-val" style="color: var(--amber);">0</strong>
+              </div>
+            </div>
+          </div>
+
+          <!-- Interactive Scrubber Bar -->
+          <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 20px; margin-bottom: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 13px; font-weight: 600;">
+              <span>Timeline Cut Distribution</span>
+              <div style="display: flex; gap: 14px; font-size: 11px; color: var(--text-muted);">
+                <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 10px; height: 10px; background: var(--emerald); border-radius: 2px;"></span> Kept Speech</span>
+                <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 10px; height: 10px; background: var(--rose); border-radius: 2px;"></span> Cut Pauses & Flubs</span>
+              </div>
+            </div>
+            <div id="edl-visual-track" style="position: relative; height: 38px; background: rgba(0,0,0,0.5); border-radius: 8px; overflow: hidden; border: 1px solid var(--border-subtle);">
+              <!-- Injected by JavaScript -->
+            </div>
+          </div>
+
+          <!-- Candidate Cuts Table -->
+          <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 20px;">
+            <h4 style="font-size: 14px; font-weight: 700; margin-bottom: 14px;">Identified Candidate Cuts & Retakes</h4>
+            <div id="edl-cuts-table-container">
+              <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                <thead>
+                  <tr style="border-bottom: 1px solid var(--border-subtle); text-align: left; color: var(--text-muted);">
+                    <th style="padding: 8px 10px;">Type</th>
+                    <th style="padding: 8px 10px;">Timecode</th>
+                    <th style="padding: 8px 10px;">Saved</th>
+                    <th style="padding: 8px 10px;">Removed Content</th>
+                    <th style="padding: 8px 10px;">Context / Kept Take</th>
+                  </tr>
+                </thead>
+                <tbody id="edl-cuts-tbody">
+                  <!-- Injected by JavaScript -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- View 6: Preflight & Safe-Zone Occlusion Audit -->
+        <div id="view-container-preflight" style="display: none;">
+          <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 24px; margin-bottom: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+              <div>
+                <h4 style="font-size: 16px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px;">
+                  <span>🛡️ Preflight Safe-Zone & Occlusion Audit</span>
+                  <span id="preflight-status-badge" class="badge" style="color: var(--emerald); border-color: rgba(16,185,129,0.3); font-size: 11px;">PASSED</span>
+                </h4>
+                <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">
+                  Automatic verification of Nate Herk's house reel rules: mouth occlusion safe zones, 0.1s speech start, subtitle contrast, and beat sync.
+                </p>
+              </div>
+            </div>
+
+            <!-- Preflight Scores Grid -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 24px;">
+              <div class="stat-card" style="background: rgba(0,0,0,0.3); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 16px;">
+                <span style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Face Safety (0% Occlusion)</span>
+                <strong id="pf-score-face" style="font-size: 26px; color: var(--emerald); display: block; margin-top: 6px;">10.0 / 10</strong>
+              </div>
+              <div class="stat-card" style="background: rgba(0,0,0,0.3); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 16px;">
+                <span style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">House Pacing Index</span>
+                <strong id="pf-score-pacing" style="font-size: 26px; color: var(--cyan); display: block; margin-top: 6px;">9.8 / 10</strong>
+              </div>
+              <div class="stat-card" style="background: rgba(0,0,0,0.3); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 16px;">
+                <span style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Transcript Beat Sync</span>
+                <strong id="pf-score-sync" style="font-size: 26px; color: var(--emerald); display: block; margin-top: 6px;">9.7 / 10</strong>
+              </div>
+              <div class="stat-card" style="background: rgba(0,0,0,0.3); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 16px;">
+                <span style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Subtitle Contrast Box</span>
+                <strong id="pf-score-contrast" style="font-size: 26px; color: var(--amber); display: block; margin-top: 6px;">10.0 / 10</strong>
+              </div>
+            </div>
+
+            <!-- Checks List -->
+            <div style="background: rgba(0,0,0,0.25); border-radius: 12px; padding: 16px; border: 1px solid var(--border-subtle);">
+              <h5 style="font-size: 13px; font-weight: 700; margin-bottom: 12px; color: var(--text-muted); text-transform: uppercase;">Preflight Verification Directives</h5>
+              <div style="display: flex; flex-direction: column; gap: 10px; font-size: 13px;" id="preflight-checks-list">
+                <!-- Injected by JavaScript -->
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- View 7: AI Clip Generator Clips Showcase (Anil Matcha Engine) -->
+        <div id="view-container-ai-clips" style="display: none;">
+          <!-- Hero banner for AI Clip Generator Showcase -->
+          <div class="final-hero-banner" style="border-color: rgba(245, 158, 11, 0.35); background: linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, rgba(15, 23, 42, 0.95) 100%); margin-bottom: 20px;">
+            <div class="final-hero-left">
+              <div class="final-status-pill" style="border-color: rgba(245, 158, 11, 0.4); color: var(--amber);">
+                <span class="pulse-dot" style="background: var(--amber);"></span>
+                <span>ANIL MATCHA ENGINE • GROQ AI VIRALITY DISCOVERY</span>
+              </div>
+              <h2 id="ai-shorts-hero-title" class="final-hero-title">Clips Created via AI Clip Generator</h2>
+              <p id="ai-shorts-hero-desc" class="final-hero-desc">
+                High-retention 9:16 vertical clips discovered from YouTube and long-form video footage. Inspect preview cuts, hook lines, virality scores, and export or edit directly in Video Editor Pro.
+              </p>
+              <div class="final-badges-strip">
+                <span class="final-meta-tag" style="border-color: rgba(245, 158, 11, 0.3); color: var(--amber);">⚡ Groq AI (openai/gpt-oss-120b)</span>
+                <span class="final-meta-tag">📱 1080×1920 9:16 Vertical Preview</span>
+                <span class="final-meta-tag">🚀 1-Click Master Assembly</span>
+                <span class="final-meta-tag">✨ Instant Studio Handoff</span>
+              </div>
+            </div>
+            <div class="final-hero-right">
+              <div class="final-score-box" style="border-color: rgba(245, 158, 11, 0.3);">
+                <span class="score-label" style="color: var(--amber);">CLIPS CREATED</span>
+                <strong id="ai-shorts-hero-count" class="score-number" style="color: var(--amber);">0</strong>
+                <span class="score-denom">VIRAL CUTS</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Metrics Bar -->
+          <div class="ai-clips-metrics-grid">
+            <div class="ai-clips-metric-card">
+              <span class="ai-clips-metric-label">Total Clips Created</span>
+              <strong id="stat-total-clips" class="ai-clips-metric-val">0</strong>
+            </div>
+            <div class="ai-clips-metric-card">
+              <span class="ai-clips-metric-label">Peak Virality Score</span>
+              <strong id="stat-peak-score" class="ai-clips-metric-val" style="color: var(--amber);">0%</strong>
+            </div>
+            <div class="ai-clips-metric-card">
+              <span class="ai-clips-metric-label">Total Viral Footage</span>
+              <strong id="stat-total-time" class="ai-clips-metric-val" style="color: var(--cyan);">0s</strong>
+            </div>
+            <div class="ai-clips-metric-card">
+              <span class="ai-clips-metric-label">Source Videos Analyzed</span>
+              <strong id="stat-total-runs" class="ai-clips-metric-val" style="color: var(--emerald);">0</strong>
+            </div>
+          </div>
+
+          <!-- Interactive Control Toolbar -->
+          <div class="ai-clips-toolbar">
+            <div class="ai-clips-toolbar-left">
+              <select id="filter-clips-run" class="ai-clips-select">
+                <option value="all">⚡ All Generated Clips</option>
+              </select>
+
+              <div class="ai-clips-search-box">
+                <span class="ai-clips-search-icon">🔍</span>
+                <input type="text" id="search-ai-clips" class="ai-clips-search-input" placeholder="Search clips by title, hook, or keywords...">
+              </div>
+
+              <select id="sort-ai-clips" class="ai-clips-select">
+                <option value="virality">🔥 Highest Virality First</option>
+                <option value="newest">🕒 Newest First</option>
+                <option value="duration_desc">⏱️ Longest Duration First</option>
+                <option value="duration_asc">⚡ Quickest Hook First</option>
+              </select>
+            </div>
+
+            <div class="ai-clips-toolbar-right">
+              <button id="btn-refresh-ai-clips" class="btn-clip-action" title="Reload all clips from server">
+                🔄 Refresh Clips
+              </button>
+              <button id="btn-goto-ai-generator" class="btn-clip-action primary" title="Open AI Shorts Generator input on sidebar">
+                ➕ Generate New AI Clips
+              </button>
+            </div>
+          </div>
+
+          <!-- Candidates Grid -->
+          <div class="ai-shorts-shelf-grid" id="ai-shorts-candidates-grid">
+            <div class="empty-shorts-state" style="text-align: center; padding: 48px 20px; color: var(--text-muted); grid-column: 1 / -1; background: rgba(0,0,0,0.25); border-radius: 12px; border: 1px dashed var(--border-subtle);">
+              <div style="font-size: 36px; margin-bottom: 12px;">⚡</div>
+              <h4 style="color: #fff; font-size: 16px; margin-bottom: 6px;">Loading AI Generated Clips...</h4>
+              <p style="font-size: 13px; max-width: 440px; margin: 0 auto;">
+                Retrieving candidate clips from the AI Clip Generator...
+              </p>
+            </div>
+          </div>
+        </div>
+
+
         <!-- Deliverables Download Hub -->
         <div style="margin-top: 10px;">
           <h4 style="font-size: 13px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px; letter-spacing: 0.5px;">Deliverable Files Hub</h4>
           
           <div class="deliverables-grid" id="deliverables-grid">
+            
+            <div class="deliverable-card">
+              <div class="del-top">
+                <div class="del-icon">✂️</div>
+                <div class="del-meta">
+                  <h6>Visual EDL Review</h6>
+                  <p>Interactive Cut Scrubber</p>
+                </div>
+              </div>
+              <a href="#" id="del-link-edl" class="del-btn" target="_blank">Launch EDL Review</a>
+            </div>
             
             <div class="deliverable-card">
               <div class="del-top">
@@ -500,6 +841,6 @@
 
   </main>
 
-  <script src="app.js"></script>
+  <script src="app.js?v=11"></script>
 </body>
 </html>

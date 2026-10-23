@@ -33,7 +33,8 @@ def handle_url(url: str, project_name: str) -> dict:
     print(f"[yt-dlp] Downloading best quality from: {url}")
     cmd = [
         "yt-dlp",
-        "--format", "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best",
+        "--remote-components", "ejs:github",
+        "--format", "bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/best[height<=1080]/18",
         "--merge-output-format", "mp4",
         "--write-info-json",
         "--write-thumbnail",

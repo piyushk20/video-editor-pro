@@ -71,6 +71,7 @@ agentic-video-studio/edit_plans/
 agentic-video-studio/reviews/
 agentic-video-studio/transcripts/
 agentic-video-studio/graphics/
+agentic-video-studio/scratch/
 
 # OS specific files
 .DS_Store

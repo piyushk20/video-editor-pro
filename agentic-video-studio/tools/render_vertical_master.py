@@ -82,6 +82,38 @@ def ensure_brolls(project_name: str, duration: float) -> list[Path]:
 
     return sorted(clips)
 
+
+def normalize_broll(clip_path: Path, cache_dir: Path) -> Path:
+    """Normalizes any B-roll to clean 1080x608 30fps H.264 video to eliminate decoder memory exhaustion."""
+    if not clip_path or not clip_path.exists():
+        return clip_path
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    norm_path = cache_dir / f"norm_{clip_path.stem}.mp4"
+    if norm_path.exists() and norm_path.stat().st_size > 10000:
+        return norm_path
+    
+    # Check if clip is already 1080x608 and lightweight
+    try:
+        info = probe_video(str(clip_path))
+        if info.get("width") == 1080 and info.get("height") == 608 and clip_path.stat().st_size < 30_000_000:
+            return clip_path
+    except Exception:
+        pass
+
+    cmd = [
+        FFMPEG, "-y",
+        "-i", str(clip_path),
+        "-map", "0:v:0",
+        "-vf", "scale=1080:608:force_original_aspect_ratio=increase,crop=1080:608,fps=30",
+        "-c:v", "libx264", "-preset", "ultrafast", "-crf", "22",
+        "-an", str(norm_path)
+    ]
+    res = subprocess.run(cmd, capture_output=True, text=True)
+    if res.returncode == 0 and norm_path.exists() and norm_path.stat().st_size > 1000:
+        return norm_path
+    return clip_path
+
+
 def render_master(project_name: str):
     print(f"\n{'='*60}")
     print(f"  Universal 9:16 Broadcast Master Compositor")
@@ -141,7 +173,7 @@ def render_master(project_name: str):
     print(f"  Motion Cards : {len(graphics_cards)}")
     print(f"  B-Roll Clips : {len(broll_clips)}")
 
-    # 4. Read Script-Aligned Motion Graphics and B-Roll Schedules
+    # 4. Motion Graphics Scheduling (Clean, Non-overlapping, Max 4 cards)
     gfx_manifest_file = STUDIO_ROOT / "graphics" / project_name / "graphics_manifest.json"
     gfx_manifest = {}
     if gfx_manifest_file.exists():
@@ -151,20 +183,52 @@ def render_master(project_name: str):
         except Exception:
             pass
 
-    gfx_schedule = []
-    for gcard in graphics_cards:
-        c_name = gcard.name
-        if c_name in gfx_manifest:
-            st = float(gfx_manifest[c_name].get("at_time", 0.5))
-            dur = float(gfx_manifest[c_name].get("duration", 4.2))
-        else:
-            st = 0.5
-            dur = 4.2
-        if st + dur > duration:
-            st = max(0.5, duration - dur - 0.5)
-        gfx_schedule.append({"file": gcard, "start": round(st, 2), "dur": round(dur, 2)})
+    raw_cards = []
+    used_names = set()
+    if gfx_manifest:
+        for c_name, meta in gfx_manifest.items():
+            card_p = STUDIO_ROOT / "graphics" / project_name / c_name
+            if card_p.exists():
+                raw_cards.append({
+                    "file": card_p,
+                    "start": float(meta.get("at_time", 0.5)),
+                    "dur": float(meta.get("duration", 4.2))
+                })
+                used_names.add(c_name)
 
-    # 4.2 Read B-Roll Manifest / Edit Plan
+    for gcard in graphics_cards:
+        if gcard.name not in used_names:
+            raw_cards.append({
+                "file": gcard,
+                "start": None,
+                "dur": 4.0
+            })
+
+    max_cards = 4
+    spacing_g = duration / (max_cards + 1)
+    gfx_schedule = []
+    last_end = 0.0
+
+    for idx, item in enumerate(raw_cards):
+        dur = min(item["dur"], 4.2)
+        if item["start"] is not None:
+            st = item["start"]
+        else:
+            st = round((len(gfx_schedule) + 1) * spacing_g, 2)
+        
+        # Enforce minimum gap of 1.5s after the previous card ends
+        if st < last_end + 1.5:
+            st = last_end + 1.5
+        
+        if st + dur > duration - 0.5:
+            continue
+        
+        gfx_schedule.append({"file": item["file"], "start": round(st, 2), "dur": round(dur, 2)})
+        last_end = st + dur
+        if len(gfx_schedule) >= max_cards:
+            break
+
+    # 4.2 B-Roll Cutaway Scheduling (Evenly spaced, clean proxies, max 2 for <= 60s)
     broll_manifest_file = STUDIO_ROOT / "assets" / "broll" / project_name / "broll_manifest.json"
     broll_manifest = []
     if broll_manifest_file.exists():
@@ -184,26 +248,35 @@ def render_master(project_name: str):
         except Exception:
             pass
 
-    broll_schedule = []
+    raw_brolls = []
     if broll_manifest:
         for entry in broll_manifest:
             c_path = entry.get("clip", {}).get("local_path") or entry.get("local_file")
             if c_path and Path(c_path).exists():
-                st = float(entry.get("at_time", 0.0))
-                dur = float(entry.get("duration", 4.0))
-                if st + dur > duration:
-                    st = max(1.0, duration - dur - 1.0)
-                broll_schedule.append({"file": Path(c_path), "start": round(st, 2), "dur": round(dur, 2)})
+                raw_brolls.append((Path(c_path), float(entry.get("at_time", 0.0)), float(entry.get("duration", 4.0))))
 
-    # Fallback pairing if manifest missing or fewer clips
-    if not broll_schedule and broll_clips:
+    if not raw_brolls and broll_clips:
         for i, clip in enumerate(broll_clips):
-            cue = broll_cues[i] if i < len(broll_cues) else {"at_time": i * 18.0 + 12.0, "duration": 4.0}
-            st = float(cue.get("at_time", i * 18.0 + 12.0))
+            cue = broll_cues[i] if i < len(broll_cues) else {}
+            st = float(cue.get("at_time", (i + 1) * (duration / (len(broll_clips) + 1))))
             dur = max(3.0, min(float(cue.get("duration", 4.0)), 5.0))
-            if st + dur > duration:
-                st = max(1.0, duration - dur - 1.0)
-            broll_schedule.append({"file": clip, "start": round(st, 2), "dur": round(dur, 2)})
+            raw_brolls.append((clip, st, dur))
+
+    max_brolls = 2 if duration <= 60.0 else 3
+    broll_schedule = []
+    cache_broll = STUDIO_ROOT / "assets" / "broll" / project_name / "proxies"
+    spacing_b = duration / (min(len(raw_brolls), max_brolls) + 1)
+
+    for i, (clip_p, req_st, req_dur) in enumerate(raw_brolls[:max_brolls]):
+        dur = min(req_dur, 4.0)
+        slot_st = round((i + 1) * spacing_b - (dur / 2.0), 2)
+        if slot_st < 2.0:
+            slot_st = 2.0
+        if slot_st + dur > duration - 1.0:
+            slot_st = max(1.0, duration - dur - 1.0)
+        
+        clean_clip = normalize_broll(clip_p, cache_broll)
+        broll_schedule.append({"file": clean_clip, "start": slot_st, "dur": dur})
 
     print(f"  [Schedule] Motion Cards scheduled : {len(gfx_schedule)}")
     for g in gfx_schedule:
@@ -219,10 +292,10 @@ def render_master(project_name: str):
     cmd_inputs = ["-i", str(input_video)]
     filter_chains = []
 
-    # Base vertical canvas with ambient blurred background
+    # Base vertical canvas with ambient blurred background (low-memory optimized)
     base_vf = (
         "[0:v] split=2 [bg][fg];"
-        "[bg] scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,gblur=sigma=28 [blurred];"
+        "[bg] scale=270:480:force_original_aspect_ratio=increase,crop=270:480,boxblur=8:2,scale=1080:1920 [blurred];"
         "[fg] scale=1080:608:force_original_aspect_ratio=decrease,pad=1080:608:(ow-iw)/2:(oh-ih)/2 [sharp];"
         "[blurred][sharp] overlay=0:(1920-608)/2 [v_curr]"
     )
@@ -242,7 +315,7 @@ def render_master(project_name: str):
         out_fade_st = dur - fade_d
 
         broll_chain = (
-            f"[{b_idx}:v] scale=1080:608:force_original_aspect_ratio=increase,crop=1080:608,"
+            f"[{b_idx}:v:0] scale=1080:608:force_original_aspect_ratio=increase,crop=1080:608,"
             f"format=rgba,fade=t=in:st=0:d={fade_d:.2f}:alpha=1,fade=t=out:st={out_fade_st:.2f}:d={fade_d:.2f}:alpha=1,"
             f"setpts=PTS-STARTPTS+{st:.3f}/TB [broll_{b_idx}]"
         )
@@ -255,7 +328,7 @@ def render_master(project_name: str):
 
     # Composite Motion Graphics in upper safe zone (y: 120-620)
     for g in gfx_schedule:
-        cmd_inputs.extend(["-loop", "1", "-t", str(g["dur"]), "-i", str(g["file"])])
+        cmd_inputs.extend(["-loop", "1", "-framerate", "25", "-t", str(g["dur"]), "-i", str(g["file"])])
         g_idx = input_idx
         input_idx += 1
         st = g["start"]
@@ -265,7 +338,7 @@ def render_master(project_name: str):
         out_fade_st = dur - fade_d
 
         gfx_chain = (
-            f"[{g_idx}:v] format=rgba,fade=t=in:st=0:d={fade_d:.2f}:alpha=1,fade=t=out:st={out_fade_st:.2f}:d={fade_d:.2f}:alpha=1,"
+            f"[{g_idx}:v:0] format=rgba,fade=t=in:st=0:d={fade_d:.2f}:alpha=1,fade=t=out:st={out_fade_st:.2f}:d={fade_d:.2f}:alpha=1,"
             f"setpts=PTS-STARTPTS+{st:.3f}/TB [gfx_{g_idx}]"
         )
         overlay_chain = (
@@ -296,7 +369,7 @@ def render_master(project_name: str):
         ["-filter_complex", fc_str] +
         ["-map", final_v, "-map", "0:a"] +
         ["-af", audio_filter] +
-        ["-c:v", "libx264", "-preset", "fast", "-crf", "18"] +
+        ["-c:v", "libx264", "-preset", "veryfast", "-crf", "19", "-threads", "2"] +
         ["-c:a", "aac", "-b:a", "192k"] +
         ["-movflags", "+faststart", str(out_9x16)]
     )
@@ -304,7 +377,8 @@ def render_master(project_name: str):
     print(f"[Render 1/3] Compositing 9:16 Vertical Master Video...")
     res = subprocess.run(cmd_render, capture_output=True, text=True)
     if res.returncode != 0:
-        print("[FFmpeg Error]:\n", res.stderr[-1000:])
+        (dest_render / "ffmpeg_err.log").write_text(res.stderr, encoding="utf-8")
+        print("[FFmpeg Error Tail]:\n", res.stderr[-3000:] if len(res.stderr) > 3000 else res.stderr)
         raise RuntimeError("FFmpeg master render failed")
 
     print(f"[OK] 9:16 Master Rendered: {out_9x16.name} ({out_9x16.stat().st_size / (1024*1024):.1f} MB)")
@@ -315,7 +389,7 @@ def render_master(project_name: str):
         FFMPEG, "-y",
         "-i", str(out_9x16),
         "-vf", "crop=1080:608:0:656,scale=1920:1080",
-        "-c:v", "libx264", "-preset", "fast", "-crf", "18",
+        "-c:v", "libx264", "-preset", "veryfast", "-crf", "19", "-threads", "2",
         "-c:a", "copy",
         str(out_16x9)
     ]

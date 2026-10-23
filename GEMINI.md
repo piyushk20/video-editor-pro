@@ -36,3 +36,13 @@ For ANY given video processed, create a dedicated self-contained project directo
 - `DELIVERY_REPORT.md` (Project summary & timestamps)
 
 The user should be able to open that **one folder** in File Explorer and have 100% of the project's deliverables.
+
+## 🚀 Stable State Configuration
+
+- **App Name**: Video Editor Pro
+- **Workspace Path**: `c:\Users\HP\video-editorpro`
+- **Port**: 8090 (unified FastAPI backend & modern web UI)
+- **Launch Command**: `python studio_server.py` from `c:\Users\HP\video-editorpro\agentic-video-studio`
+- **Health Check Endpoint**: `http://127.0.0.1:8090/health` (HTTP 200 `{"status": "ok", "app": "Video Editor Pro"}`)
+- **Frontend URL**: `http://localhost:8090/`
+
